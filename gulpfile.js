@@ -19,7 +19,9 @@ var gulp= require('gulp'),
   glob= require('glob'),
   express = require('express'),
   http = require('http'),
+  logger= require('morgan'),
   server = http.createServer(express()
+    .use(logger())
     .use(express.static(__dirname + '/src/'))
     .use(express.static(__dirname + '/bower_components/'))
   );
@@ -33,11 +35,6 @@ var appJsGlobs=['src/js/**/*.js'],
 var target='dist',
     commonName='chess';
 
-
-/**
-* When used, this task launches the selenium
-* server and let it run indefinitely
-*/
 
 gulp.task('webdriver_update', webdriver_update);
 gulp.task('webdriver_standalone', webdriver_standalone);

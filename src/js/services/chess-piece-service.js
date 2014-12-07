@@ -1,16 +1,16 @@
 angular.module('chess.services')
-.service('chessPieceService', function(){
-	return function(){
+.factory('chessPieceService', function(){
+	var ChessPieceService= function(){
 
 		var that= this;
 
 		this.types= {
-			KING:'king',
-			QUEEN:'queen',
-			ROOK: 'rook',
-			BISHOP: 'bishop',
-			KNIGHT: 'knight',
-			PAWN: 'pawn'
+			'KING':'king',
+			'QUEEN':'queen',
+			'ROOK': 'rook',
+			'BISHOP': 'bishop',
+			'KNIGHT': 'knight',
+			'PAWN': 'pawn'
 		};
 
 		this.colors= {
@@ -39,7 +39,7 @@ angular.module('chess.services')
 				throw "Position unauthorized : (" + x +',' + y + ')'; 
 			}
 
-			return new Piece(name, color, x, y);
+			return new Piece(that.types[name], that.colors[color], x, y);
 		};
 
 		this.setPosition= function(x, y){
@@ -52,4 +52,6 @@ angular.module('chess.services')
 		};
 
 	};
+
+	return new ChessPieceService();
 });

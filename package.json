@@ -32,6 +32,7 @@
     "karma-junit-reporter": "0.2.2",
     "protractor": "1.4.0",
     "express":"4.10.4",
+    "morgan": "1.5.0",
     "glob":"4.3.1"
   }
 }
