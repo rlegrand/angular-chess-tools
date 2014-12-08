@@ -41,7 +41,7 @@ angular.module('chess.directives')
 
 			//ABOUT DRAG AND DROP
 
-			element.on('dragOver', function(e){
+			element.on('dragover', function(e){
 
 			  if (e.preventDefault) {
 			    e.preventDefault(); // Necessary. Allows us to drop.
@@ -50,39 +50,32 @@ angular.module('chess.directives')
 			});
 
 			var imgElement= element.find('img');
-			$scope.$watch('piece', function(previous, next){
 
-				if (next !== undefined){
-					//get image
-					//Set the current piece as data
-					imgElement.on('dragStart', function(e){
-						e.dataTransfer.setData('piece', next);
-					});
-
-				}
+			//Set the current piece as data
+			imgElement.on('dragstart', function(e){
+				e.dataTransfer.setData('piece', next);
 			});
-
-/*			//Change the style when dragging on top of a square
-			imgElement.on('dragenter', function(e){
-			  this.classList.add('over');
-			});*/
-			
 
 			//Change the style when dragging on top of a square
+
 			element.on('dragenter', function(e){
-			  this.classList.add('over');
-			});
+			  this.classList.add('overSquare');
+			});		
 
 			//Remove the style when leaving the square
 			element.on('dragleave', function(e) {
-			  this.classList.remove('over');  
+				console.log('dragleave');
+			  this.classList.remove('overSquare'); 
 			});
 
 			//Update the chessboard when the piece is dropped
 			element.on('drop', function(e){
 				e.stopPropagation();
+				this.classList.remove('overSquare');
 				var data= e.dataTransfer.getData('piece');
-				chessBoardController.tryMove(data.piece,$scope.x, $scope.y);
+				if (data !== undefined){
+					chessBoardController.tryMove(data.piece,$scope.x, $scope.y);
+				}
 			});
 
 		}
@@ -131,7 +124,7 @@ angular.module('chess.directives')
 
 			this.tryMove= function(piece, x, y){
 
-				
+				console.log('try move');
 
 			};
 		}]

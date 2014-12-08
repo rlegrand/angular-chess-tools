@@ -1,12 +1,18 @@
 
-
-
 .whiteSquare{
 	background-color: white;
 }
 
 .blackSquare{
-	background-color: gray;
+	background-color: rgb(218, 109, 0);
+}
+
+.overSquare{
+/*	box-sizing:border-box;
+	-moz-box-sizing:border-box;
+	-webkit-box-sizing:border-box;
+	border:1px solid gray;*/
+	background-color: rgba(0,0,0, 0.5);
 }
 
 .square{
@@ -16,8 +22,6 @@
 }
 
 .firstOfLine{
-/*   content: "EOL";
-   display: block; */
    clear: both;	
 }
 
@@ -27,7 +31,4 @@
 	height: 100%;
 }
 
-.over{
-	background-color: black;
-}
 
