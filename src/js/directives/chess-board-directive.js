@@ -1,94 +1,17 @@
 angular.module('chess.directives')
-.directive('chessSquareDirective', function(){
-
-	return {
-		require:'^chessBoardDirective',
-		replace: true,
-		transclude: false,
-		scope:{
-			x:'@',
-			y:'@',
-			piece:'=?'
-		},
-		template: 
-		' <div ' +
-		'	ng-class="cssClasses" ' +
-		' >' +
-		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" draggable="true"></img>' +
-		' </div>',
-		link: function($scope, element, attrs, chessBoardController){
-
-			$scope.x= parseInt($scope.x);
-			$scope.y= parseInt($scope.y);
-
-			$scope.cssClasses={
-				square: true,
-				blackSquare: ( ($scope.x + $scope.y)%2 === 0 ),
-				whiteSquare: ( ($scope.x + $scope.y)%2 === 1 ),
-				firstOfLine: ( $scope.x === 0 )
-			};
-
-			$scope.isEmpty= ($scope.piece === undefined);
-
-			$scope.imgSource= function(){
-				if (!$scope.isEmpty){
-					return '/imgs/' + $scope.piece.name + '_' + $scope.piece.color + '.svg';
-				}
-			};
-
-
-			chessBoardController.registerSquareScope($scope);
-
-			//ABOUT DRAG AND DROP
-
-			element.on('dragover', function(e){
-
-			  if (e.preventDefault) {
-			    e.preventDefault(); // Necessary. Allows us to drop.
-			  }
-
-			});
-
-			var imgElement= element.find('img');
-
-			//Set the current piece as data
-			imgElement.on('dragstart', function(e){
-				e.dataTransfer.setData('piece', next);
-			});
-
-			//Change the style when dragging on top of a square
-
-			element.on('dragenter', function(e){
-			  this.classList.add('overSquare');
-			});		
-
-			//Remove the style when leaving the square
-			element.on('dragleave', function(e) {
-				console.log('dragleave');
-			  this.classList.remove('overSquare'); 
-			});
-
-			//Update the chessboard when the piece is dropped
-			element.on('drop', function(e){
-				e.stopPropagation();
-				this.classList.remove('overSquare');
-				var data= e.dataTransfer.getData('piece');
-				if (data !== undefined){
-					chessBoardController.tryMove(data.piece,$scope.x, $scope.y);
-				}
-			});
-
-		}
-	};
-
-})
+/**
+* TODO: use ngdoc
+* Directive params:
+* -> user: 'white' | 'black' | 'both'
+* 	 defines the user position. Both means that the user can independently move any piece.
+*/
 .directive('chessBoardDirective', ['chessPositionService', function(chessPositionService){
 
 	return{
 		replace: true,
 		transclude: false,
 		scope:{
-			position:'=?'
+			user:'='
 		},
 		template: 
 		'<div id="chessBoard">' +
@@ -101,6 +24,7 @@ angular.module('chess.directives')
 		'	> ' +
 		'</div> ',
 		controller: ['$scope', function($scope){
+			var that= this;
 
 			$scope.getX= function(index){
 				return index % 8;
@@ -116,13 +40,36 @@ angular.module('chess.directives')
 
 			this.squareScopes= [];
 
+
+			this.adaptDraggablePiece= function(squareScope){
+				if (!squareScope.isEmpty && $scope.user){
+
+					if (squareScope.piece.color == $scope.user){
+						squareScope.activateDrag();
+					}else{
+						squareScope.disableDrag();
+					}
+				}
+			}
+
+			$scope.$watch('user', function(newVal, oldVal){
+				if (newVal !== undefined && oldVal !== undefined){
+					for(var i= 0; i< that.squareScopes.length; i++){
+						that.adaptDraggablePiece(that.squareScopes[i]);
+					}
+				}
+			})
+
+
 			this.registerSquareScope= function(squareScope){
 				var x= squareScope.x,
 					y= squareScope.y;
 				this.squareScopes[y*8+x]= squareScope;
+				this.adaptDraggablePiece(squareScope);
 			};
 
 			this.tryMove= function(piece, x, y){
+
 
 				console.log('try move');
 

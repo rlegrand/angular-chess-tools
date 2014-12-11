@@ -7,8 +7,11 @@
 	</head>
 	<body ng-controller="mainController">
 
-		<chess-board-directive></chess-board-directive>
+		<button ng-click="changeColor()">change color</button>
+
+		<chess-board-directive user="color"></chess-board-directive>
 		
+		<!-- SCRIPTS -->
 		<script type="text/javascript" src="/angular/angular.js"></script>
 		<script type="text/javascript" src="/angular-bootstrap/ui-bootstrap-tpls.js"></script>
 		<script type="text/javascript" src="/angular-sanitize/angular-sanitize.js"></script>
@@ -24,6 +27,7 @@
 
 		<script type="text/javascript" src="/js/directives/a-module.js"></script>
 		<script type="text/javascript" src="/js/directives/chess-board-directive.js"></script>
+		<script type="text/javascript" src="/js/directives/chess-square-directive.js"></script>
 
 		<script type="text/javascript" src="/js/filters/a-module.js"></script>
 		<script type="text/javascript" src="/js/filters/chess-range-filter.js"></script>
