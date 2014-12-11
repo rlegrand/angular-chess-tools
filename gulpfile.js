@@ -2,7 +2,7 @@
 var gulp= require('gulp'),
   debug= require('gulp-debug'),
   gutil= require('gulp-util'),
-	karma = require('gulp-karma'),
+  karma = require('gulp-karma'),
   rimraf= require('gulp-rimraf'),
   jshint= require('gulp-jshint'),
   jshintStylish= require('jshint-stylish'),
@@ -16,25 +16,22 @@ var gulp= require('gulp'),
   protractor= require('gulp-protractor').protractor,
   webdriver_standalone = require('gulp-protractor').webdriver_standalone,
   webdriver_update = require('gulp-protractor').webdriver_update,
-  glob= require('glob'),
-  express = require('express'),
-  http = require('http'),
-  logger= require('morgan'),
-  server = http.createServer(express()
-    .use(logger())
-    .use(express.static(__dirname + '/src/'))
-    .use(express.static(__dirname + '/bower_components/'))
-  );
+  myUtils= require(__dirname + '/more/gulp/utils'),
+  server= myUtils.getServer();
 
 var appJsGlobs=['src/js/**/*.js'],
     unitTestJsGlobs=['test/unit/utils.js','test/unit/**/*Spec.js'],
-    e2eJsGlobs='test/e2e/**/*Spec.js',
+    e2eJsGlobs= ['test/e2e/**/*.js'],
     appCssGlobs= ['src/styles/**/*.css'],
     appImages= ['src/imgs/**/*'];
 
 var target='dist',
-    commonName='chess';
+    targetAppName= myUtils.getPackage().name;
 
+/**
+* When used, this task launches the selenium
+* server and let it run indefinitely
+*/
 
 gulp.task('webdriver_update', webdriver_update);
 gulp.task('webdriver_standalone', webdriver_standalone);
@@ -46,9 +43,9 @@ gulp.task('express', function(cb){
 
 gulp.task('test-unit', function() {
 
-  var unitTestFiles= glob.sync(unitTestJsGlobs[1]);
-
-  if (unitTestFiles.length === 0){
+  //Check files to test
+  var filesToTest= myUtils.getFilesForPatterns(unitTestJsGlobs);
+  if (!filesToTest){
     return;
   }
 
@@ -62,7 +59,7 @@ gulp.task('test-unit', function() {
   //Then add application specific js
   .pipe(addSrc.append(appJsGlobs))
   //Then add unit tests specific js
-  .pipe(addSrc.append(unitTestJsGlobs))
+  .pipe(addSrc.append(filesToTest))
   //Finally run karma unit tests
   .pipe(karma({
       configFile: 'karma.conf.js',
@@ -87,19 +84,17 @@ gulp.task('jshint', function(){
 
 gulp.task('test-e2e', ['webdriver_update', 'express'],  function(cb){
 
-  var e2eSpecFiles= glob.sync(e2eJsGlobs);
-
-  //No files to treat, end
-  if (e2eSpecFiles.length === 0){
-    server.close();
+  //Check files to test
+  var filesToTest= myUtils.getFilesForPatterns(e2eJsGlobs);
+  if (!filesToTest){
     cb();
     return;
   }
-  
-  gulp.src(e2eSpecFiles, { read:false })
+
+  //start protractor
+  gulp.src(filesToTest, { read:false })
       .pipe(protractor({
         configFile: './protractor.conf.js',
-        // args: ['--baseUrl', 'http://' + server.address().address + ':' + server.address().port +'/e2eTemplates/']
         args: ['--baseUrl', 'http://localhost:' + server.address().port +'/e2eTemplates/']
       })).on('error', function(e) {
         server.close();
@@ -126,26 +121,22 @@ gulp.task('clean', ['prebuild'], function (cb) {
 
 gulp.task('minifyJs', ['prebuild', 'clean'],  function(){
 
-  var target_name=commonName;
-
   gulp.src(appJsGlobs) 
-  .pipe(concat( target_name + '.js'))
+  .pipe(concat( targetAppName + '.js'))
   .pipe(gulp.dest('./' + target + '/js/')) //not minified
   .pipe(uglify())
-  .pipe(rename(target_name + '-min.js'))
+  .pipe(rename(targetAppName + '-min.js'))
   .pipe(gulp.dest('./' + target + '/js/')); //minified
 
 });
 
 gulp.task('minifyCss',['prebuild', 'clean'],  function(){
 
-  var target_name= commonName;
-
   gulp.src(appCssGlobs)
-  .pipe(concat(target_name + '.css'))
+  .pipe(concat(targetAppName + '.css'))
   .pipe(gulp.dest('./' + target + '/styles/'))
   .pipe(cssmin())
-  .pipe(rename(target_name + '-min.css'))
+  .pipe(rename(targetAppName + '-min.css'))
   .pipe(gulp.dest('./' + target + '/styles/'));
 
 });
