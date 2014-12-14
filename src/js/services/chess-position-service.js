@@ -40,7 +40,7 @@ angular.module('chess.services')
 				sourceInd= startY*8+startX;
 
 			position[sourceInd]= undefined;
-			piece.setPosition(x, y);
+			PieceService.setPosition(piece, x, y);
 			addPiece(piece);
 		};
 
@@ -52,6 +52,12 @@ angular.module('chess.services')
 		var initPosition= function(){
 			if (!isInitialized){
 				var x, i, set;
+
+				//Default to undefined
+				for(i= 0; i< 64; i++){
+					position.push(undefined);
+				}
+
 				//PAWNS
 				for (x= 0; x< 8; x++){
 					addPiece( PieceService.new('PAWN', 'WHITE', x, 1));
@@ -86,6 +92,7 @@ angular.module('chess.services')
 
 		var ChessPositionService= function(){
 			initPosition();
+			this.getPosition= function(){return position};
 			this.getPiece= getPiece;
 			this.movePiece= movePiece;
 			this.dropPiece= dropPiece;

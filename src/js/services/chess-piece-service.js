@@ -42,13 +42,17 @@ angular.module('chess.services')
 			return new Piece(that.types[name], that.colors[color], x, y);
 		};
 
-		this.setPosition= function(x, y){
+		this.fromData= function(pieceData){
+			return new Piece(pieceData.name, pieceData.color, pieceData.x, pieceData.color);
+		}
+
+		this.setPosition= function(piece, x, y){
 			if (x < 0 || x > 7 || y < 0 || y > 7){
 				throw "Position unauthorized : (" + x +',' + y + ')'; 
 			}
 
-			this.x= x;
-			this.y= y;
+			piece.x= x;
+			piece.y= y;
 		};
 
 	};

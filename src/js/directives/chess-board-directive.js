@@ -2,8 +2,11 @@ angular.module('chess.directives')
 /**
 * TODO: use ngdoc
 * Directive params:
-* -> user: 'white' | 'black' | 'both'
-* 	 defines the user position. Both means that the user can independently move any piece.
+* -> user: 'white' | 'black'
+* 	 defines the user position.
+*	 Impact draggable pieces and color position
+* 
+* -> 
 */
 .directive('chessBoardDirective', ['chessPositionService', function(chessPositionService){
 
@@ -11,67 +14,88 @@ angular.module('chess.directives')
 		replace: true,
 		transclude: false,
 		scope:{
-			user:'='
+			user:'=',
+			displayCoordinates:'='
 		},
-		template: 
-		'<div id="chessBoard">' +
-		'	<chess-square-directive ' +
-		'		ng-repeat="indice in [] | range:64" ' +
-		'		x="{{getX($index)}}" ' +
-		'		y="{{getY($index)}}" ' +
-		'		y="{{getY($index)}}" ' +
-		'		piece="getPiece($index)" ' +
-		'	> ' +
-		'</div> ',
+		template:
+		'<div>' +
+		'	<div id="chessBoard" ng-class="cssClasses()">' +
+		'		<chess-square-directive ' +
+		'			ng-repeat="piece in position track by $index" ' +
+		'			x="{{getX($index)}}" ' +
+		'			y="{{getY($index)}}" ' +
+		'			piece="{{piece}}" ' +
+		'			reverse="{{isReverse(user)}}" ' +
+		'		> ' +
+		'	</div> ' +
+		'	<div id="rightCoordinates" ng-if="displayCoordinates" ng-class="cssClasses()"> ' +
+		'		<div ng-repeat="indice in [] | range:8 | increment:1" ng-class="cssClasses()">{{indice}}</div> ' +
+		'	</div> ' +
+		'	<div id="bottomCoordinates"  ng-if="displayCoordinates" ng-class="cssClasses()"> ' +
+		'		<div ng-repeat="indice in [] | range:8 | asLetter | reverse" ng-class="cssClasses()">{{indice}}</div> ' +
+		'	</div> ' +
+		'</div>'
+		,
 		controller: ['$scope', function($scope){
 			var that= this;
 
+			$scope.position= chessPositionService.getPosition();
+
+			//Check position changes
+			$scope.$watch(chessPositionService.getPosition, 
+				function(newVal, oldVal){
+					$scope.position= newVal;
+				}, true);
+
+			$scope.cssClasses= function(){
+				return {
+					reverse:$scope.isReverse($scope.user)
+				};
+			};
+
 			$scope.getX= function(index){
 				return index % 8;
-			}
+			};
 
 			$scope.getY= function(index){
-				return 7 - Math.floor(index / 8);
-			}
+				return Math.floor(index / 8);
+			};
 
-			$scope.getPiece= function(index){
-				return chessPositionService.getPiece($scope.getX(index), $scope.getY(index));
+			var getIndex= function(x, y){
+				return y*8+x;
 			}
 
 			this.squareScopes= [];
 
-
-			this.adaptDraggablePiece= function(squareScope){
-				if (!squareScope.isEmpty && $scope.user){
-
-					if (squareScope.piece.color == $scope.user){
-						squareScope.activateDrag();
-					}else{
-						squareScope.disableDrag();
-					}
+			$scope.isReverse= function(user){
+				if (user){
+					return (user === 'white');
 				}
 			}
 
-			$scope.$watch('user', function(newVal, oldVal){
-				if (newVal !== undefined && oldVal !== undefined){
-					for(var i= 0; i< that.squareScopes.length; i++){
-						that.adaptDraggablePiece(that.squareScopes[i]);
-					}
-				}
-			})
 
+			this.isDraggable= function(squareScope){
+				if (!squareScope.isEmpty && $scope.user){
+					return squareScope.content.piece.color == $scope.user;
+				}
+			}
 
 			this.registerSquareScope= function(squareScope){
-				var x= squareScope.x,
-					y= squareScope.y;
-				this.squareScopes[y*8+x]= squareScope;
-				this.adaptDraggablePiece(squareScope);
+				var x= squareScope.content.x,
+					y= squareScope.content.y;
+					this.squareScopes[y*8+x]= squareScope;
 			};
 
-			this.tryMove= function(piece, x, y){
+			this.tryMove= function(prevX, prevY, x, y){
 
+				var sourceIndex= getIndex(prevX, prevY);
 
-				console.log('try move');
+				var piece= $scope.position[sourceIndex];
+				chessPositionService.movePiece(piece, x, y);
+				
+				$scope.$apply(function(){
+
+				});
 
 			};
 		}]

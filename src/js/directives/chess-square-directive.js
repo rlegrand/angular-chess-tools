@@ -8,31 +8,52 @@ angular.module('chess.directives')
 		scope:{
 			x:'@',
 			y:'@',
-			piece:'=?'
+			piece:'@?',
+			reverse: '@'
 		},
 		template: 
 		' <div ' +
-		'	ng-class="cssClasses" ' +
+		'	ng-class="cssClasses()" ' +
 		' >' +
-		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" draggable="{{draggable}}"></img>' +
+		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" draggable="{{isDraggable()}}"></img>' +
 		' </div>',
 		link: function($scope, element, attrs, chessBoardController){
 
-			$scope.x= parseInt($scope.x);
-			$scope.y= parseInt($scope.y);
 
-			$scope.cssClasses={
-				square: true,
-				blackSquare: ( ($scope.x + $scope.y)%2 === 0 ),
-				whiteSquare: ( ($scope.x + $scope.y)%2 === 1 ),
-				firstOfLine: ( $scope.x === 0 )
+			var updateScopeContent= function(){
+				$scope.content= {
+					x: parseInt($scope.x),
+					y: parseInt($scope.y),
+					piece: ($scope.piece !== undefined && $scope.piece !==''? JSON.parse($scope.piece): undefined)
+				}
+
+				$scope.isEmpty= ($scope.content.piece === undefined);
+			}
+
+			//We need to set scope content at init
+			updateScopeContent();
+
+			//we need to update scope content when a modif appears on
+			//a piece
+			$scope.$watch('piece', function(newVal, oldVal){
+				updateScopeContent();
+			});
+
+			$scope.cssClasses= function(){
+				return {
+					square: true,
+					blackSquare: ( ($scope.content.x + $scope.content.y)%2 === 1 ),
+					whiteSquare: ( ($scope.content.x + $scope.content.y)%2 === 0 ),
+					firstOfLine: $scope.content.x === 0,
+					reverse: $scope.reverse == 'true'
+				};
 			};
 
-			$scope.isEmpty= ($scope.piece === undefined);
+
 
 			$scope.imgSource= function(){
 				if (!$scope.isEmpty){
-					return '/imgs/' + $scope.piece.name + '_' + $scope.piece.color + '.svg';
+					return '/imgs/' + $scope.content.piece.name + '_' + $scope.content.piece.color + '.svg';
 				}
 			};
 
@@ -58,41 +79,30 @@ angular.module('chess.directives')
 			  this.classList.remove('overSquare'); 
 			});
 
+			element.on('dragstart', function(e){
+				var currentPos=$scope.content.piece.x + ' ' + $scope.content.piece.y;
+				e.dataTransfer.setData('piece', currentPos);
+			});
+
 			//Update the chessboard when the piece is dropped
 			element.on('drop', function(e){
 				e.stopPropagation();
 				this.classList.remove('overSquare');
-				var data= e.dataTransfer.getData('piece');
-				if (data !== undefined){
-					chessBoardController.tryMove(data.piece,$scope.x, $scope.y);
+				var prevPos= e.dataTransfer.getData('piece');
+				if (prevPos !== undefined){
+					var splited= prevPos.split(' '),
+						prevX= parseInt(splited[0]),
+						prevY= parseInt(splited[1]);
+
+					chessBoardController.tryMove(prevX, prevY, $scope.content.x, $scope.content.y);
 				}
 			});
 
-			$scope.activateDrag= function(){
-				$scope.draggable= true;
-				/*
-				var fn= function(){$scope.draggable= true;};
-				if (withApply){$scope.$apply(fn);}
-				else{
-					fn();
-				}*/
+			$scope.isDraggable= function(){
+				return chessBoardController.isDraggable($scope);
 			};
-
-			$scope.disableDrag= function(){
-				$scope.draggable= false;
-				/*
-				var fn= function(){$scope.draggable= false;};
-				if (withApply){$scope.$apply(fn);}
-				else{
-					fn();
-				}*/
-			};
-
-
 
 			chessBoardController.registerSquareScope($scope);
-
-
 		}
 	};
 

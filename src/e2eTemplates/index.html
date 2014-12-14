@@ -8,8 +8,13 @@
 	<body ng-controller="mainController">
 
 		<button ng-click="changeColor()">change color</button>
+		<button ng-click="checkMove()">check move</button>
 
-		<chess-board-directive user="color"></chess-board-directive>
+		<chess-board-directive 
+			user="color"
+			display-coordinates="true"
+		>
+		</chess-board-directive>
 		
 		<!-- SCRIPTS -->
 		<script type="text/javascript" src="/angular/angular.js"></script>
