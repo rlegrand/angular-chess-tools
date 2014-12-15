@@ -15,7 +15,7 @@ angular.module('chess.directives')
 		' <div ' +
 		'	ng-class="cssClasses()" ' +
 		' >' +
-		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" draggable="{{isDraggable()}}"></img>' +
+		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" class="toMove" draggable="{{isDraggable()}}"></img>' +
 		' </div>',
 		link: function($scope, element, attrs, chessBoardController){
 
@@ -49,13 +49,17 @@ angular.module('chess.directives')
 				};
 			};
 
-
-
 			$scope.imgSource= function(){
 				if (!$scope.isEmpty){
 					return '/imgs/' + $scope.content.piece.name + '_' + $scope.content.piece.color + '.svg';
 				}
 			};
+
+			$scope.getImage= function(){
+				if (!$scope.isEmpty){
+					return element.find('img');
+				}
+			}
 
 			//ABOUT DRAG AND DROP
 

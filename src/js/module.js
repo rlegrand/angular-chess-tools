@@ -1,6 +1,6 @@
 angular.module('chess', [
 	'chess.services', 'chess.controllers', 
 	'chess.directives','chess.filters',
-	'ui.bootstrap'
+	'ngAnimate', 'ui.bootstrap'
 ])
 .config([function(){}]);

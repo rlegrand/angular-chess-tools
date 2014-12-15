@@ -8,7 +8,8 @@ angular.module('chess.directives')
 * 
 * -> 
 */
-.directive('chessBoardDirective', ['chessPositionService', function(chessPositionService){
+.directive('chessBoardDirective', ['chessPositionService', '$animate', 
+	function(chessPositionService, $animate){
 
 	return{
 		replace: true,
@@ -90,12 +91,27 @@ angular.module('chess.directives')
 
 				var sourceIndex= getIndex(prevX, prevY);
 
+				var squareScope= this.squareScopes[sourceIndex];
+				var imgElement= squareScope.getImage();
 				var piece= $scope.position[sourceIndex];
-				chessPositionService.movePiece(piece, x, y);
-				
-				$scope.$apply(function(){
+				//imgElement.addClass('toMove');
+				var prevTop= imgElement[0].style.top,
+					prevLeft= imgElement[0].style.left;
+				imgElement.css({top: (prevTop - 200) + 'px', left: (prevLeft + 200) + 'px'});
 
-				});
+				// $animate.animate(imgElement, {top:'0px'}, {top: '300px'});
+				// .then(function(){
+				// 	console.log('animation ended');
+				// 	chessPositionService.movePiece(piece, x, y);
+				// 	$scope.$apply();
+				// }, function(){console.log('error');});
+				
+
+
+				
+				// $scope.$apply(function(){
+
+				// });
 
 			};
 		}]
