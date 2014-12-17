@@ -33,7 +33,16 @@ angular.module('chess.services')
 			position[indice]= undefined;
 		};
 
+		var getLastMove= function(){
+			return this.lastMove;
+		};
+
 		var movePiece= function(piece, x, y){
+
+			this.lastMove= {
+				from: {x: piece.x, y: piece.y},
+				to:{x: x, y: y}
+			};
 
 			var startX= piece.x,
 				startY= piece.y;
@@ -94,6 +103,7 @@ angular.module('chess.services')
 			initPosition();
 			this.getPosition= function(){return position};
 			this.getPiece= getPiece;
+			this.getLastMove= getLastMove;
 			this.movePiece= movePiece;
 			this.dropPiece= dropPiece;
 		};

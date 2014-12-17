@@ -40,12 +40,33 @@ angular.module('chess.directives')
 		controller: ['$scope', function($scope){
 			var that= this;
 
-			$scope.position= chessPositionService.getPosition();
+			// $scope.position= chessPositionService.getPosition();
 
 			//Check position changes
 			$scope.$watch(chessPositionService.getPosition, 
 				function(newVal, oldVal){
-					$scope.position= newVal;
+
+					var lastMove= chessPositionService.getLastMove();
+
+					if (lastMove){
+						var sourceIndex= getIndex(lastMove.from.x, lastMove.from.y);
+						var squareScope= that.squareScopes[sourceIndex];
+						var imgElement= squareScope.getImage();
+						var piece= $scope.position[sourceIndex];
+
+						var diffX= (lastMove.to.x - lastMove.from.x) * imgElement[0].width;
+						var diffY= (lastMove.to.y - lastMove.from.y) * imgElement[0].height;
+
+						$animate.animate(imgElement, {top:0, left: 0}, {top: diffY + 'px', left: diffX + 'px'})
+						.then(function(data){
+							console.log();
+							$scope.position= newVal;
+						});
+					}else{
+						$scope.position= newVal;
+					}
+
+
 				}, true);
 
 			$scope.cssClasses= function(){
@@ -90,28 +111,18 @@ angular.module('chess.directives')
 			this.tryMove= function(prevX, prevY, x, y){
 
 				var sourceIndex= getIndex(prevX, prevY);
-
-				var squareScope= this.squareScopes[sourceIndex];
-				var imgElement= squareScope.getImage();
+				// var squareScope= this.squareScopes[sourceIndex];
+				// var imgElement= squareScope.getImage();
 				var piece= $scope.position[sourceIndex];
-				//imgElement.addClass('toMove');
-				var prevTop= imgElement[0].style.top,
-					prevLeft= imgElement[0].style.left;
-				imgElement.css({top: (prevTop - 200) + 'px', left: (prevLeft + 200) + 'px'});
 
-				// $animate.animate(imgElement, {top:'0px'}, {top: '300px'});
-				// .then(function(){
-				// 	console.log('animation ended');
-				// 	chessPositionService.movePiece(piece, x, y);
-				// 	$scope.$apply();
-				// }, function(){console.log('error');});
-				
+				// var diffX= (x - prevX) * imgElement[0].width;
+				// var diffY= (y - prevY) * imgElement[0].height;
 
+				// $animate.animate(imgElement, {top:0, left: 0}, {top: diffX, left: diffY});
 
-				
-				// $scope.$apply(function(){
-
-				// });
+				$scope.$apply(function(){
+					chessPositionService.movePiece(piece, x, y);
+				});
 
 			};
 		}]
