@@ -14,7 +14,7 @@ angular.module('chess.controllers')
 
 	$scope.checkMove= function(){
 			var piece= chessPieceService.new('PAWN', 'WHITE', 3, 1);
-			chessPositionService.movePiece(piece, 3, 3);
+			chessPositionService.checkMove(piece, 3, 3);
 	}
 
 	//$scope.position= chessPositionService.getPosition();

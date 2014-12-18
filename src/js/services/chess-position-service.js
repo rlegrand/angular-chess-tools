@@ -37,12 +37,17 @@ angular.module('chess.services')
 			return this.lastMove;
 		};
 
-		var movePiece= function(piece, x, y){
-
+		var moveAccepted= false;
+		var checkMove= function(piece, x, y){
 			this.lastMove= {
 				from: {x: piece.x, y: piece.y},
 				to:{x: x, y: y}
 			};
+
+			moveAccepted= true;
+		}
+
+		var movePiece= function(piece, x, y){
 
 			var startX= piece.x,
 				startY= piece.y;
@@ -51,6 +56,11 @@ angular.module('chess.services')
 			position[sourceInd]= undefined;
 			PieceService.setPosition(piece, x, y);
 			addPiece(piece);
+			moveAccepted= false;
+		};
+
+		var getPosition= function(){
+			return position
 		};
 
 		var getPiece= function(x,y){
@@ -97,13 +107,15 @@ angular.module('chess.services')
 				addPiece( PieceService.new('KING', 'WHITE', 4, 0));
 				addPiece( PieceService.new('KING', 'BLACK', 4, 7));
 			}
-		};		
+		};
 
 		var ChessPositionService= function(){
 			initPosition();
-			this.getPosition= function(){return position};
+			this.getPosition= getPosition;
 			this.getPiece= getPiece;
 			this.getLastMove= getLastMove;
+			this.isMoveAccepted= function(){ return moveAccepted;};
+			this.checkMove= checkMove;
 			this.movePiece= movePiece;
 			this.dropPiece= dropPiece;
 		};
