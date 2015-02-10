@@ -1,20 +1,43 @@
 <!doctype html>
-<html ng-app="chess">
+<html ng-app="sample">
 	<head>
 		<meta charset="utf-8" />
 		<title>Chess Game</title>
 		<link rel="stylesheet" type="text/css" href="/styles/chess.css">
+		<link rel="stylesheet" type="text/css" href="styles/main.css">
 	</head>
 	<body ng-controller="mainController">
+		<ul class="actions">
+			<li ng-repeat="(key,button) in buttons">
+				<button 
+					ng-click="setButtonActive(button); button.fn()"
+					ng-mouseover="buttonOverLeave(button.desc, button)"
+					ng-mouseleave="buttonOverLeave('', button)"
+					ng-class="{active:button.active, over: button.over}"
+				>
+					{{button.label}}
+				</button>
+			</li>
+		</ul>
+		<p class="description">{{description}}</p>
+		<hr>
+		</div>
 
-		<button ng-click="changeColor()">change color</button>
-		<button ng-click="checkMove()">check move</button>
+		<ul class="chess-container">
+			<li>
+				<chess-board-directive 
+					user="color"
+					display-coordinates="true"
+					display-accessible-squares="accessibleMoves"
+					control="control"
+				>
+				</chess-board-directive>
+			</li>
+			<li ng-if="isEditable()">
+				<chess-edit-board-directive></chess-edit-board-directive>
+			</li>
+		</ul>
 
-		<chess-board-directive 
-			user="color"
-			display-coordinates="true"
-		>
-		</chess-board-directive>
 		
 		<!-- SCRIPTS -->
 		<script type="text/javascript" src="/angular/angular.js"></script>
@@ -26,21 +49,20 @@
 		<script type="text/javascript" src="/js/services/a-module.js"></script>
 		<script type="text/javascript" src="/js/services/chess-piece-service.js"></script>
 		<script type="text/javascript" src="/js/services/chess-position-service.js"></script>
+		<script type="text/javascript" src="/js/services/chess-moves-service.js"></script>
 
 		<script type="text/javascript" src="/js/controllers/a-module.js"></script>
-		<script type="text/javascript" src="/js/controllers/chess-main-controller.js"></script>
 
 		<script type="text/javascript" src="/js/directives/a-module.js"></script>
 		<script type="text/javascript" src="/js/directives/chess-board-directive.js"></script>
 		<script type="text/javascript" src="/js/directives/chess-square-directive.js"></script>
+		<script type="text/javascript" src="/js/directives/chess-edit-board-directive.js"></script>
 
 		<script type="text/javascript" src="/js/filters/a-module.js"></script>
 		<script type="text/javascript" src="/js/filters/chess-range-filter.js"></script>
 
 		<script type="text/javascript" src="/js/module.js"></script>
 
-		<script type="text/javascript">
-
-		</script>
+		<script type="text/javascript" src="/e2eTemplates/js/sample.js"></script>
 	</body>
 </html>

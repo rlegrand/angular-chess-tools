@@ -66,11 +66,19 @@
 .square{
 	width:12.5%;
 	height:12.5%;	
-	float:left;
+	float:right;
 }
 
 .overSquare{
 	box-shadow: inset 0 0 10px #000000;
+}
+
+	/*box-shadow: inset 0 0 10px #0040FF;*/
+.highlightSquare{
+	background-image: -webkit-radial-gradient(ellipse farthest-corner,
+				 rgba(255, 255, 255, 0) 60%, black 100% );
+	background-image: -moz-radial-gradient(ellipse farthest-corner,
+				 rgba(255, 255, 255, 0) 60%, black 100% );		
 }
 
 .firstOfLine{
@@ -93,8 +101,37 @@
 	-ms-transition: all 0.5s;
 }
 
-.square img[draggable=true]{
+.square img[draggable=true], .editsquare img[draggable=true]{
 	cursor: move;
 }
 
+.editBoardContainer{
+	padding: 10px 10px 20px 10px;
+	list-style-type: none;
+	border: solid 1px black;
+	border-radius: 4px;
+}
 
+.editBoardContainer ul{
+	margin: 0;
+	padding: 0;
+}
+
+.editBoardContainer > button{
+    color: grey;
+    background-color: white;
+    border-radius: 4px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.trash{
+	text-align: center;
+}
+
+.trash img{
+	position: relative;
+	top: 10px;
+	width: 3em;
+	height: 3em;
+}

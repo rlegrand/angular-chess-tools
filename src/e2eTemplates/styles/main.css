@@ -1,0 +1,43 @@
+body {
+	font: 100%/1.2 "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #444;
+	background: #FFF;
+}
+
+.chess-container > li{
+	display: inline-block;
+}
+
+.editBoardContainer{
+	position: relative;
+	top: -100px;
+}
+
+.actions li{
+	display: inline-block;
+}
+
+button{
+    color: black;
+    background-color: white;
+    border-radius: 4px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+button.active{
+	background-color: #81F7F3;
+	font-weight: bold;
+}
+
+button.over{
+	background-color: grey;
+	color:white;
+	font-weight: bold;
+}
+
+.description{
+	display: block;
+	height: 1.5em;
+	padding-left: 2em;
+}

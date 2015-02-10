@@ -4,25 +4,30 @@ angular.module('chess.directives')
 * Directive params:
 * -> user: 'white' | 'black'
 * 	 defines the user position.
-*	 Impact draggable pieces and color position
+*	 Impact draggable pieces (if control = user) and board position (choosen color is at bottom)
 * 
-* -> 
+* -> control: 'user' | 'all' | edit
+*    if 'user', the current user can only control its pieces
+*    if 'all', all pieces are draggable
+*    'edit' is a special mode to edit the board, no controls are done
 */
-.directive('chessBoardDirective', ['chessPositionService', '$animate', 
-	function(chessPositionService, $animate){
+.directive('chessBoardDirective', ['chessPositionService', 'chessMoveService', '$animate', '$log',
+	function(chessPositionService, chessMoveService, $animate, $log){
 
 	return{
 		replace: true,
 		transclude: false,
 		scope:{
 			user:'=',
-			displayCoordinates:'='
+			displayCoordinates:'=',
+			displayAccessibleSquares:'=?',
+			control:'='
 		},
 		template:
 		'<div>' +
 		'	<div id="chessBoard" ng-class="cssClasses()">' +
 		'		<chess-square-directive ' +
-		'			ng-repeat="piece in position track by $index" ' +
+		'			ng-repeat="piece in getPosition() track by $index" ' +
 		'			x="{{getX($index)}}" ' +
 		'			y="{{getY($index)}}" ' +
 		'			piece="{{piece}}" ' +
@@ -40,6 +45,7 @@ angular.module('chess.directives')
 		controller: ['$scope', function($scope){
 			var that= this;
 
+			$scope.getPosition= chessPositionService.getPosition;
 			$scope.position= chessPositionService.getPosition();
 
 			//Check position changes
@@ -88,7 +94,7 @@ angular.module('chess.directives')
 
 			var getIndex= function(x, y){
 				return y*8+x;
-			}
+			};
 
 			this.squareScopes= [];
 
@@ -96,14 +102,20 @@ angular.module('chess.directives')
 				if (user){
 					return (user === 'white');
 				}
-			}
+			};
 
+			this.getControl= function(){
+				return $scope.control;
+			};
 
 			this.isDraggable= function(squareScope){
 				if (!squareScope.isEmpty && $scope.user){
-					return squareScope.content.piece.color == $scope.user;
+
+					return ($scope.control === 'all') || 
+						   ($scope.control === 'edit') ||
+						   ($scope.control === 'user' && squareScope.content.piece.color == $scope.user);
 				}
-			}
+			};
 
 			this.registerSquareScope= function(squareScope){
 				var x= squareScope.content.x,
@@ -111,23 +123,54 @@ angular.module('chess.directives')
 					this.squareScopes[y*8+x]= squareScope;
 			};
 
+			this.needCheckMoves= function(){
+				return $scope.control !== 'edit';
+			}
+
 			this.tryMove= function(prevX, prevY, x, y){
-
 				var sourceIndex= getIndex(prevX, prevY);
-				// var squareScope= this.squareScopes[sourceIndex];
-				// var imgElement= squareScope.getImage();
 				var piece= $scope.position[sourceIndex];
-
-				// var diffX= (x - prevX) * imgElement[0].width;
-				// var diffY= (y - prevY) * imgElement[0].height;
-
-				// $animate.animate(imgElement, {top:0, left: 0}, {top: diffX, left: diffY});
-
 				$scope.$apply(function(){
+					that.hidePreviousMoves();
 					chessPositionService.checkMove(piece, x, y);
 				});
-
 			};
+
+			this.addPiece= function(piece){
+				$scope.$apply(function(){
+					chessPositionService.addPiece(piece);
+				});
+			};
+
+
+			//HIDE AND DISPLAY MOVES
+			$scope.accessibleMoves;
+			this.displayAccessibleMoves= function(piece){
+				if (!this.needCheckMoves() || !$scope.displayAccessibleSquares){
+					return;
+				}
+				$scope.accessibleMoves= chessMoveService.getMoves(piece);
+				var move;
+				for (var i in $scope.accessibleMoves){
+					move= $scope.accessibleMoves[i];
+					this.squareScopes[move.y*8+move.x].content.highlight= true;
+				}
+			};
+
+			this.hidePreviousMoves= function(){
+				if (!this.needCheckMoves() || !$scope.displayAccessibleSquares){
+					return;
+				}
+				if ($scope.accessibleMoves){
+					for (var i in $scope.accessibleMoves){
+						move= $scope.accessibleMoves[i];
+						this.squareScopes[move.y*8+move.x].content.highlight= false;
+					}
+					$scope.accessibleMoves= undefined;
+				}
+			};
+
+
 		}]
 	};
 
