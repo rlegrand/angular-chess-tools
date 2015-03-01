@@ -3,8 +3,10 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>Chess Game</title>
+		<!-- build:css(src) styles.css -->
 		<link rel="stylesheet" type="text/css" href="/styles/chess.css">
-		<link rel="stylesheet" type="text/css" href="styles/main.css">
+		<link rel="stylesheet" type="text/css" href="/e2eTemplates/styles/main.css">
+		<!-- endbuild -->
 	</head>
 	<body ng-controller="mainController">
 		<ul class="actions">
@@ -40,10 +42,12 @@
 
 		
 		<!-- SCRIPTS -->
+		<!-- build:extjs(bower_components) ext.js -->
 		<script type="text/javascript" src="/angular/angular.js"></script>
 		<script type="text/javascript" src="/angular-animate/angular-animate.js"></script>
-		<script type="text/javascript" src="/angular-sanitize/angular-sanitize.js"></script>
+		<!-- endbuild -->
 
+		<!-- build:appjs(src) app.js -->
 		<script type="text/javascript" src="/js/module.js"></script>
 
 		<script type="text/javascript" src="/js/services/a-module.js"></script>
@@ -64,5 +68,6 @@
 		<script type="text/javascript" src="/js/module.js"></script>
 
 		<script type="text/javascript" src="/e2eTemplates/js/sample.js"></script>
+		<!-- endbuild -->
 	</body>
 </html>

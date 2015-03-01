@@ -1,7 +1,6 @@
 
 var gulp= require('gulp'),
   debug= require('gulp-debug'),
-  gutil= require('gulp-util'),
   karma = require('gulp-karma'),
   rimraf= require('gulp-rimraf'),
   jshint= require('gulp-jshint'),
@@ -13,7 +12,8 @@ var gulp= require('gulp'),
   addSrc= require('gulp-add-src'),
   gfilter= require('gulp-filter'),
   rename= require('gulp-rename'),
-  protractor= require('gulp-protractor').protractor,
+  gdocs= require('gulp-ngdocs'),
+  usemin= require('gulp-usemin'),
   webdriver_standalone = require('gulp-protractor').webdriver_standalone,
   webdriver_update = require('gulp-protractor').webdriver_update,
   myUtils= require(__dirname + '/more/gulp/utils'),
@@ -37,7 +37,7 @@ gulp.task('webdriver_update', webdriver_update);
 gulp.task('webdriver_standalone', webdriver_standalone);
 
 gulp.task('express', function(cb){
-  server.listen(9001, cb);
+  server.listen(8080, cb);
 });
 
 
@@ -45,7 +45,7 @@ gulp.task('test-unit', function() {
 
   //Check files to test
   var filesToTest= myUtils.getFilesForPatterns(unitTestJsGlobs);
-  if (!filesToTest){
+  if (!filesToTest || filesToTest.length === 0){
     return;
   }
 
@@ -86,7 +86,8 @@ gulp.task('test-e2e', ['webdriver_update', 'express'],  function(cb){
 
   //Check files to test
   var filesToTest= myUtils.getFilesForPatterns(e2eJsGlobs);
-  if (!filesToTest){
+  if (!filesToTest || filesToTest.length === 0){
+    server.close();
     cb();
     return;
   }
@@ -106,8 +107,16 @@ gulp.task('test-e2e', ['webdriver_update', 'express'],  function(cb){
       });
 });
 
+  gulp.task('ngdocs', function(cb){
 
-gulp.task('prebuild', ['test-unit', 'jshint', 'test-e2e'], function(cb){
+    return gulp.src(appJsGlobs)
+    .pipe(gdocs.process())
+    .pipe(gulp.dest('./reports/doc/'));
+
+  });
+
+
+gulp.task('prebuild', ['test-unit', 'jshint', 'test-e2e', 'ngdocs'], function(cb){
   cb();
 });
 
@@ -151,4 +160,22 @@ gulp.task('build', ['minifyJs','minifyCss', 'images'], function(cb){
   cb();
 });
 
-gulp.task('default', ['build']);
+gulp.task('default', ['build', 'sample'], function(cb){
+  cb();
+});
+
+
+gulp.task('imgssample', [ 'clean'],  function(){
+  gulp.src(appImages)
+  .pipe(gulp.dest('./' + target + '/sample/imgs'));
+});  
+
+gulp.task('sample', ['clean', 'imgssample'], function(){
+  return gulp.src('src/e2eTemplates/index.html')
+      .pipe(usemin({
+        css: [cssmin(), 'concat'],
+        extjs: [uglify(), 'concat'],
+        appjs: [uglify(), 'concat']
+      }))
+      .pipe(gulp.dest('./' + target + '/sample'));
+});

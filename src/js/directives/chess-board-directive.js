@@ -24,7 +24,7 @@ angular.module('chess.directives')
 			control:'='
 		},
 		template:
-		'<div>' +
+		'<div id="chessBoardContainer">' +
 		'	<div id="chessBoard" ng-class="cssClasses()">' +
 		'		<chess-square-directive ' +
 		'			ng-repeat="piece in getPosition() track by $index" ' +
@@ -42,7 +42,7 @@ angular.module('chess.directives')
 		'	</div> ' +
 		'</div>'
 		,
-		controller: ['$scope', function($scope){
+		controller: ['$scope', '$element', function($scope, $element){
 			var that= this;
 
 			$scope.getPosition= chessPositionService.getPosition;
@@ -63,7 +63,7 @@ angular.module('chess.directives')
 							var piece= $scope.position[sourceIndex];
 
 							var diffX= (lastMove.to.x - lastMove.from.x) * imgElement[0].width;
-							var diffY= (lastMove.to.y - lastMove.from.y) * imgElement[0].height;
+							var diffY= (lastMove.from.y - lastMove.to.y) * imgElement[0].height;
 
 							$animate.animate(imgElement, {top:0, left: 0}, {top: diffY + 'px', left: diffX + 'px'})
 							.then(function(data){
@@ -77,6 +77,29 @@ angular.module('chess.directives')
 					}
 
 				});
+
+			var leavedBoardContent= false;
+			$element.on('dragenter', function(e){
+				var target = e.target || e.srcElement;
+				if (target === $element[0]){
+					// console.log('hide');
+					leavedBoardContent= true;
+					$scope.$apply(function(){
+						that.hidePreviousMoves(false);
+					});
+				}
+				else{
+					if (leavedBoardContent){
+						leavedBoardContent= false;
+						// console.log('display');
+						$scope.$apply(function(){
+							that.displayMoves($scope.accessibleMoves);
+						});
+					}
+				}
+
+
+			});
 
 			$scope.cssClasses= function(){
 				return {
@@ -131,7 +154,7 @@ angular.module('chess.directives')
 				var sourceIndex= getIndex(prevX, prevY);
 				var piece= $scope.position[sourceIndex];
 				$scope.$apply(function(){
-					that.hidePreviousMoves();
+					that.hidePreviousMoves(true);
 					chessPositionService.checkMove(piece, x, y);
 				});
 			};
@@ -145,19 +168,24 @@ angular.module('chess.directives')
 
 			//HIDE AND DISPLAY MOVES
 			$scope.accessibleMoves;
+
+			this.displayMoves= function(moves){
+				if (moves){
+					moves.forEach(function(move,i){
+						that.squareScopes[move.y*8+move.x].content.highlight= true;
+					});
+				}
+			};
+
 			this.displayAccessibleMoves= function(piece){
 				if (!this.needCheckMoves() || !$scope.displayAccessibleSquares){
 					return;
 				}
 				$scope.accessibleMoves= chessMoveService.getMoves(piece);
-				var move;
-				for (var i in $scope.accessibleMoves){
-					move= $scope.accessibleMoves[i];
-					this.squareScopes[move.y*8+move.x].content.highlight= true;
-				}
+				this.displayMoves($scope.accessibleMoves);
 			};
 
-			this.hidePreviousMoves= function(){
+			this.hidePreviousMoves= function(removeAccessibleMoves){
 				if (!this.needCheckMoves() || !$scope.displayAccessibleSquares){
 					return;
 				}
@@ -166,7 +194,9 @@ angular.module('chess.directives')
 						move= $scope.accessibleMoves[i];
 						this.squareScopes[move.y*8+move.x].content.highlight= false;
 					}
-					$scope.accessibleMoves= undefined;
+					if (removeAccessibleMoves){
+						$scope.accessibleMoves= undefined;
+					}
 				}
 			};
 

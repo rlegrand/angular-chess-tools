@@ -76,21 +76,28 @@ angular.module('chess.directives')
 			  }
 
 			});
-
 			//Change the style when dragging on top of a square
 
 			element.on('dragenter', function(e){
 			  this.classList.add('overSquare');
+			  // e.stopPropagation();
 			});
 
 			//Remove the style when leaving the square
 			element.on('dragleave', function(e) {
-			  this.classList.remove('overSquare'); 
+			  this.classList.remove('overSquare');
+			  e.stopPropagation();
 			});
 
 			element.on('dragstart', function(e){
-				var data='in ' + $scope.content.piece.x + ' ' + $scope.content.piece.y;
+				var data='in ' + $scope.content.piece.x + ' ' + $scope.content.piece.y,
+					img= $scope.getImage()[0],
+					offsetx= img.width/2,
+					offsetY= img.height/2;
+					console.log(offsetx);
+
 				e.dataTransfer.setData('piece', data);
+				e.dataTransfer.setDragImage(img, offsetx, offsetY);
 				$scope.$apply(function(){
 					chessBoardController.displayAccessibleMoves($scope.content.piece);
 				});
@@ -98,7 +105,9 @@ angular.module('chess.directives')
 
 			//Update the chessboard when the piece is dropped
 			element.on('drop', function(e){
-				e.stopPropagation();
+				if (e.preventDefault){e.preventDefault();}
+				if (e.stopPropagation){e.stopPropagation();}
+
 				this.classList.remove('overSquare');
 				var prevPos= e.dataTransfer.getData('piece');
 

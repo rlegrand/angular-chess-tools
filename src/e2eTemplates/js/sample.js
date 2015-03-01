@@ -18,8 +18,8 @@ angular.module('sample', ['chess'])
 	}
 
 	$scope.checkMove= function(){
-			var piece= chessPieceService.new('PAWN', 'WHITE', 3, 1);
-			chessPositionService.checkMove(piece, 3, 3);
+			var piece= chessPieceService.new('KNIGHT', 'BLACK', 1, 7);
+			chessPositionService.checkMove(piece, 0, 5);
 	};
 
 	$scope.control= 'user';
