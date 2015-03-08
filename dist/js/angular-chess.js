@@ -429,7 +429,7 @@ angular.module('chess.directives')
 
 			$scope.imgSource= function(){
 				if (!$scope.isEmpty){
-					return '/imgs/' + $scope.content.piece.name + '_' + $scope.content.piece.color + '.svg';
+					return 'imgs/' + $scope.content.piece.name + '_' + $scope.content.piece.color + '.svg';
 				}
 			};
 
