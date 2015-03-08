@@ -29,7 +29,7 @@ Configuration allows to:
 
 <h1>Sample</h1>
 
-<a href="rlegrand.github.io/angular-chess-tools" target="_blank">
+<a href="http://rlegrand.github.io/angular-chess-tools" target="_blank">
 	here
 </a>
 
