@@ -11,8 +11,8 @@ angular.module('chess.directives')
 *    if 'all', all pieces are draggable
 *    'edit' is a special mode to edit the board, no controls are done
 */
-.directive('chessBoardDirective', ['chessPositionService', 'chessMoveService', '$animate', '$log',
-	function(chessPositionService, chessMoveService, $animate, $log){
+.directive('chessBoardDirective', ['$animate', '$log', 'chessConstants', 'chessPositionService', 'chessMoveService', 
+	function($animate, $log, constants, chessPositionService, chessMoveService){
 
 	return{
 		replace: true,
@@ -20,13 +20,15 @@ angular.module('chess.directives')
 		scope:{
 			user:'=',
 			displayCoordinates:'=',
+			moveMode:'=',
 			displayAccessibleSquares:'=?',
-			control:'='
+			control:'=',
 		},
 		template:
 		'<div id="chessBoardContainer">' +
 		'	<div id="chessBoard" ng-class="cssClasses()">' +
 		'		<chess-square-directive ' +
+		'			chess-square-move ' +
 		'			ng-repeat="piece in getPosition() track by $index" ' +
 		'			x="{{getX($index)}}" ' +
 		'			y="{{getY($index)}}" ' +
@@ -78,29 +80,6 @@ angular.module('chess.directives')
 
 				});
 
-			var leavedBoardContent= false;
-			$element.on('dragenter', function(e){
-				var target = e.target || e.srcElement;
-				if (target === $element[0]){
-					// console.log('hide');
-					leavedBoardContent= true;
-					$scope.$apply(function(){
-						that.hidePreviousMoves(false);
-					});
-				}
-				else{
-					if (leavedBoardContent){
-						leavedBoardContent= false;
-						// console.log('display');
-						$scope.$apply(function(){
-							that.displayMoves($scope.accessibleMoves);
-						});
-					}
-				}
-
-
-			});
-
 			$scope.cssClasses= function(){
 				return {
 					reverse:$scope.isReverse($scope.user)
@@ -123,7 +102,7 @@ angular.module('chess.directives')
 
 			$scope.isReverse= function(user){
 				if (user){
-					return (user === 'white');
+					return (user === constants.user.white);
 				}
 			};
 
@@ -131,12 +110,16 @@ angular.module('chess.directives')
 				return $scope.control;
 			};
 
-			this.isDraggable= function(squareScope){
+			this.getMoveMode= function(){
+				return $scope.moveMode;
+			};
+
+			this.isMovable= function(squareScope){
 				if (!squareScope.isEmpty && $scope.user){
 
-					return ($scope.control === 'all') || 
-						   ($scope.control === 'edit') ||
-						   ($scope.control === 'user' && squareScope.content.piece.color == $scope.user);
+					return ($scope.control === constants.control.all) || 
+						   ($scope.control === constants.control.edit) ||
+						   ($scope.control === constants.control.user && squareScope.content.piece.color == $scope.user);
 				}
 			};
 
@@ -147,15 +130,15 @@ angular.module('chess.directives')
 			};
 
 			this.needCheckMoves= function(){
-				return $scope.control !== 'edit';
+				return $scope.control !== constants.control.edit;
 			}
 
 			this.tryMove= function(prevX, prevY, x, y){
 				var sourceIndex= getIndex(prevX, prevY);
 				var piece= $scope.position[sourceIndex];
 				$scope.$apply(function(){
+					chessPositionService.checkMove(piece, x, y, $scope.accessibleMoves);
 					that.hidePreviousMoves(true);
-					chessPositionService.checkMove(piece, x, y);
 				});
 			};
 
@@ -199,6 +182,69 @@ angular.module('chess.directives')
 					}
 				}
 			};
+
+
+			var leavedBoardContent= false;
+			this.applyMoveMode= function(newVal, oldVal){
+
+				if (newVal){
+
+					switch(newVal){
+						//DRAGNDROP
+						case constants.moveMode.dragndrop:
+							//For the board itself
+							$element.on('dragenter', function(e){
+
+								var target = e.target || e.srcElement;
+								if (target === $element[0]){
+									// console.log('hide');
+									leavedBoardContent= true;
+									$scope.$apply(function(){
+										that.hidePreviousMoves(false);
+									});
+								}
+								else{
+									if (leavedBoardContent){
+										leavedBoardContent= false;
+										// console.log('display');
+										$scope.$apply(function(){
+											that.displayMoves($scope.accessibleMoves);
+										});
+									}
+								}
+							});
+
+							break;
+						//SIMPLE CLICK
+						case constants.moveMode.click:
+							$element.off('dragenter');
+							break;
+						default:
+							$log.error('Unknow move mode: ' + newVal);
+					}
+
+					//For each square
+					var squareScope;
+					for (var i in that.squareScopes){
+						squareScope= that.squareScopes[i];
+						if (squareScope.applyMoveMode){
+							squareScope.applyMoveMode(newVal);
+						}
+						else{
+							$log.error('applyMoveMode undefined on square scope');
+						}
+					}
+				}
+
+			};
+
+			//TREATMENTS CONCERNING MOVE MODE
+			$scope.$watch('moveMode', this.applyMoveMode);
+			$scope.$watch('control', function(newVal, oldVal){
+				if (newVal === constants.control.edit){
+					$scope.moveMode= constants.moveMode.dragndrop;
+				}
+			});
 
 
 		}]

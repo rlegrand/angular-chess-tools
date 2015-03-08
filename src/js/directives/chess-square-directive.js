@@ -1,5 +1,5 @@
 angular.module('chess.directives')
-.directive('chessSquareDirective', ['chessPieceService', function(chessPieceService){
+.directive('chessSquareDirective', [ function(){
 
 	return {
 		require:'^chessBoardDirective',
@@ -16,8 +16,11 @@ angular.module('chess.directives')
 		'	ng-class="cssClasses()" ' +
 		' >' +
 		// '	({{x}},{{y}}) ' +
-		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" draggable="{{isDraggable()}}"></img>' +
+		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" draggable="{{isMovable()}}"></img>' +
 		' </div>',
+		controller:['$scope', function($scope){ 
+			this.getScope= function(){return $scope;} 
+		}],
 		link: function($scope, element, attrs, chessBoardController){
 
 			//TODO: check if $scope.content is still needed
@@ -46,12 +49,17 @@ angular.module('chess.directives')
 					whiteSquare= !blackSquare,
 					firstOfLine= ($scope.content.x === 0),
 					reverse= ($scope.reverse === 'true'),
-					highlightSquare= $scope.content.highlight;
+					highlightSquareEmpty= $scope.content.highlight && $scope.isEmpty,
+					highlightSquareFilled= $scope.content.highlight && !$scope.isEmpty;
 
 				return {
-					square: square, 	blackSquare: blackSquare,
-					whiteSquare: whiteSquare, firstOfLine: firstOfLine,
-					reverse: reverse,highlightSquare: highlightSquare
+					square: square, 
+					blackSquare: blackSquare,
+					whiteSquare: whiteSquare, 
+					firstOfLine: firstOfLine,
+					reverse: reverse,
+					highlightSquareEmpty:highlightSquareEmpty, 
+					highlightSquareFilled: highlightSquareFilled
 				};
 			};
 
@@ -68,71 +76,9 @@ angular.module('chess.directives')
 			};
 
 
-			//ABOUT DRAG AND DROP
-			element.on('dragover', function(e){
 
-			  if (e.preventDefault) {
-			    e.preventDefault(); // Necessary. Allows us to drop.
-			  }
-
-			});
-			//Change the style when dragging on top of a square
-
-			element.on('dragenter', function(e){
-			  this.classList.add('overSquare');
-			  // e.stopPropagation();
-			});
-
-			//Remove the style when leaving the square
-			element.on('dragleave', function(e) {
-			  this.classList.remove('overSquare');
-			  e.stopPropagation();
-			});
-
-			element.on('dragstart', function(e){
-				var data='in ' + $scope.content.piece.x + ' ' + $scope.content.piece.y,
-					img= $scope.getImage()[0],
-					offsetx= img.width/2,
-					offsetY= img.height/2;
-					console.log(offsetx);
-
-				e.dataTransfer.setData('piece', data);
-				e.dataTransfer.setDragImage(img, offsetx, offsetY);
-				$scope.$apply(function(){
-					chessBoardController.displayAccessibleMoves($scope.content.piece);
-				});
-			});
-
-			//Update the chessboard when the piece is dropped
-			element.on('drop', function(e){
-				if (e.preventDefault){e.preventDefault();}
-				if (e.stopPropagation){e.stopPropagation();}
-
-				this.classList.remove('overSquare');
-				var prevPos= e.dataTransfer.getData('piece');
-
-				if (prevPos !== undefined){
-					var splited= prevPos.split(' '),
-						mode= splited[0],
-						control= chessBoardController.getControl();
-					
-					//The piece comes from the board
-					if (mode === 'in'){
-						var prevX= parseInt(splited[1]),
-							prevY= parseInt(splited[2]);
-						// And the user can only move its pieces
-						chessBoardController.tryMove(prevX, prevY, $scope.content.x, $scope.content.y);
-					}else if (mode === 'out' && control === 'edit'){
-						var type= splited[1],
-							color= splited[2];
-							piece= chessPieceService.new(type, color,  $scope.content.x, $scope.content.y);
-						chessBoardController.addPiece(piece);
-					}
-				}
-			});
-
-			$scope.isDraggable= function(){
-				return chessBoardController.isDraggable($scope);
+			$scope.isMovable= function(){
+				return chessBoardController.isMovable($scope);
 			};
 
 			chessBoardController.registerSquareScope($scope);

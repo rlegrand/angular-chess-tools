@@ -92,13 +92,32 @@ angular.module('chess.services')
 			return moveAccepted;
 		};
 
-		var checkMove= function(piece, x, y){
-			this.lastMove= {
-				from: {x: piece.x, y: piece.y},
-				to:{x: x, y: y}
+		var checkMove= function(piece, x, y, accessibleMoves){
+
+			var applyMove= function(){
+				this.lastMove= {
+					from: {x: piece.x, y: piece.y},
+					to:{x: x, y: y}
+				};
+
+				moveAccepted= true;					
 			};
 
-			moveAccepted= true;
+			moveAccepted= false;
+			if (accessibleMoves !== undefined){
+				var currentMove;
+				for (var i in accessibleMoves){
+					currentMove= accessibleMoves[i];
+					if (currentMove.x === x && currentMove.y === y){
+						applyMove.apply(this);
+						break;
+					}
+				}
+			}
+			else{
+				applyMove.apply(this);
+			}
+
 		};
 
 		var movePiece= function(piece, x, y, extPos){
@@ -202,6 +221,7 @@ angular.module('chess.services')
 
 		//The service definition methods
 		var ChessPositionService= function(){
+
 			initPosition();
 			this.addPiece= addPiece;
 			this.dropPosition= dropPosition;

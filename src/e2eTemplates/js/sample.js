@@ -17,6 +17,15 @@ angular.module('sample', ['chess'])
 		$scope.accessibleMoves= !$scope.accessibleMoves;
 	}
 
+	$scope.moveMode=  'dragndrop';
+	$scope.switchMoveMode= function(){
+		if ($scope.moveMode === 'dragndrop'){
+			$scope.moveMode= 'click';
+		}else{
+			$scope.moveMode= 'dragndrop';
+		}
+	}
+
 	$scope.checkMove= function(){
 			var piece= chessPieceService.new('KNIGHT', 'BLACK', 1, 7);
 			chessPositionService.checkMove(piece, 0, 5);
@@ -36,32 +45,43 @@ angular.module('sample', ['chess'])
 		{
 			label:'change color',
 			fn:$scope.changeColor,
-			desc:'Rotate the chessboard and use the color at bottom'
+			desc:'Rotate the chessboard and so the user color.',
+			currentVal:'color'
 		},
 		{
 			label:'Hide/display moves',
 			fn:$scope.switchAccessibleMoves,
-			desc:'Display or hide the accessible moves when dragging a piece'
+			desc:'Display or hide the accessible moves when dragging a piece.\
+			If not selected, wrong moves are possible.',
+			currentVal:'accessibleMoves'
+		},
+		{
+			label:'Change move mode',
+			fn:$scope.switchMoveMode,
+			desc:'Moves can be done by dragNdrop or by clicking source and target squares.',
+			currentVal:'moveMode'
 		},
 		{
 			label:'check automated move',
 			fn:$scope.checkMove,
-			desc:'How does the piece moves when it\s not a user action'
+			desc:'How does the piece moves when it\'s not a user action'
 		},
 		{
 			label:'control user',
 			fn:function(){$scope.setControl('user');},
-			desc:'Limit the user control to its pieces'
+			desc:'Limit the user control to its pieces',
+			currentVal:'control'
 		},
 		{
 			label:'control all',
 			fn:function(){$scope.setControl('all');},
-			desc:'All pieces are movable'
+			desc:'All pieces are movable',
+			currentVal:'control'
 		},
 		{
 			label:'edit board',
 			fn:function(){$scope.setControl('edit');},
-			desc:'Edit a pospition'
+			desc:'Edit a position'
 		}
 	];
 
@@ -70,10 +90,13 @@ angular.module('sample', ['chess'])
 			$scope.buttons[i].active= false;
 		}
 		button.active= true;
+		button.fn();
+		$scope.currentVal= $scope[button.currentVal];
 	}
 
-	$scope.buttonOverLeave= function(desc, button){
+	$scope.buttonOverLeave= function(desc, currentVal,  button){
 		$scope.description= desc;
+		$scope.currentVal= $scope[currentVal];
 		if (desc && desc.length > 0){
 			button.over= true;
 		}
