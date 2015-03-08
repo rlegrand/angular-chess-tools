@@ -1,0 +1,52 @@
+<!doctype html>
+<html ng-app="sample">
+	<head>
+		<meta charset="utf-8" />
+		<title>Chess Game</title>
+		<link rel="stylesheet" href="styles.css"/>
+	</head>
+	<body ng-controller="mainController">
+		<ul class="actions">
+			<li ng-repeat="(key,button) in buttons">
+				<button 
+					ng-click="setButtonActive(button);"
+					ng-mouseover="buttonOverLeave(button.desc, button.currentVal, button)"
+					ng-mouseleave="buttonOverLeave('', '', button)"
+					ng-class="{active:button.active, over: button.over}"
+				>
+					{{button.label}}
+				</button>
+			</li>
+		</ul>
+		<p class="description">
+			<span ng-if="currentVal !== undefined  && currentVal !== ''">
+				current value: {{currentVal}}
+			</span> <br />
+			{{description}} 
+		</p>
+		<hr>
+		</div>
+
+		<ul class="chess-container">
+			<li>
+				<chess-board-directive 
+					user="color"
+					display-coordinates="true"
+					move-mode="moveMode"
+					display-accessible-squares="accessibleMoves"
+					control="control"
+				>
+				</chess-board-directive>
+			</li>
+			<li ng-if="isEditable()">
+				<chess-edit-board-directive></chess-edit-board-directive>
+			</li>
+		</ul>
+
+		
+		<!-- SCRIPTS -->
+		<script src="ext.js"></script>
+
+		<script src="app.js"></script>
+	</body>
+</html>
