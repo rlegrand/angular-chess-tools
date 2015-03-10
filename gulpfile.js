@@ -177,7 +177,7 @@ gulp.task('sample', ['clean', 'imgssample'], function(){
         css: [cssmin(), 'concat'],
         extjs: [uglify(), 'concat'],
         appjs: [
-          greplace(/setImgsRootPath\('\/imgs'\)/, 'setImgsRootPath(\'/angular-chess-tools\')'),
+          greplace(/setImgsRootPath\('\/imgs'\)/, 'setImgsRootPath(\'/angular-chess-tools/imgs\')'),
           uglify(), 
           'concat'
         ]
