@@ -6,485 +6,6 @@ angular.module('chess', [
 .config([function(){}]);
 
 angular.module('chess.controllers', []);
-angular.module('chess.directives', ['chess.services']);
-angular.module('chess.directives')
-/**
-* TODO: use ngdoc
-* Directive params:
-* -> user: 'white' | 'black'
-* 	 defines the user position.
-*	 Impact draggable pieces (if control = user) and board position (choosen color is at bottom)
-* 
-* -> control: 'user' | 'all' | edit
-*    if 'user', the current user can only control its pieces
-*    if 'all', all pieces are draggable
-*    'edit' is a special mode to edit the board, no controls are done
-*/
-.directive('chessBoardDirective', ['$animate', '$log', 'chessConstants', 'chessPositionService', 'chessMoveService', 
-	function($animate, $log, constants, chessPositionService, chessMoveService){
-
-	return{
-		replace: true,
-		transclude: false,
-		scope:{
-			user:'=',
-			displayCoordinates:'=',
-			moveMode:'=',
-			displayAccessibleSquares:'=?',
-			control:'=',
-		},
-		template:
-		'<div id="chessBoardContainer">' +
-		'	<div id="chessBoard" ng-class="cssClasses()">' +
-		'		<chess-square-directive ' +
-		'			chess-square-move ' +
-		'			ng-repeat="piece in getPosition() track by $index" ' +
-		'			x="{{getX($index)}}" ' +
-		'			y="{{getY($index)}}" ' +
-		'			piece="{{piece}}" ' +
-		'			reverse="{{isReverse(user)}}" ' +
-		'		> ' +
-		'	</div> ' +
-		'	<div id="rightCoordinates" ng-if="displayCoordinates" ng-class="cssClasses()"> ' +
-		'		<div ng-repeat="indice in [] | range:8 | increment:1" ng-class="cssClasses()">{{indice}}</div> ' +
-		'	</div> ' +
-		'	<div id="bottomCoordinates"  ng-if="displayCoordinates" ng-class="cssClasses()"> ' +
-		'		<div ng-repeat="indice in [] | range:8 | asLetter | reverse" ng-class="cssClasses()">{{indice}}</div> ' +
-		'	</div> ' +
-		'</div>'
-		,
-		controller: ['$scope', '$element', function($scope, $element){
-			var that= this;
-
-			$scope.getPosition= chessPositionService.getPosition;
-			$scope.position= chessPositionService.getPosition();
-
-			//Check position changes
-			$scope.$watch(chessPositionService.isMoveAccepted, 
-				function(newVal, oldVal){
-
-					if (newVal === true){
-
-						var lastMove= chessPositionService.getLastMove();
-
-						if (lastMove){
-							var sourceIndex= getIndex(lastMove.from.x, lastMove.from.y);
-							var squareScope= that.squareScopes[sourceIndex];
-							var imgElement= squareScope.getImage();
-							var piece= $scope.position[sourceIndex];
-
-							var diffX= (lastMove.to.x - lastMove.from.x) * imgElement[0].width;
-							var diffY= (lastMove.from.y - lastMove.to.y) * imgElement[0].height;
-
-							$animate.animate(imgElement, {top:0, left: 0}, {top: diffY + 'px', left: diffX + 'px'})
-							.then(function(data){
-								$scope.$apply(
-									function(){
-										chessPositionService.movePiece(piece, lastMove.to.x, lastMove.to.y);
-									}
-								);
-							});
-						}
-					}
-
-				});
-
-			$scope.cssClasses= function(){
-				return {
-					reverse:$scope.isReverse($scope.user)
-				};
-			};
-
-			$scope.getX= function(index){
-				return index % 8;
-			};
-
-			$scope.getY= function(index){
-				return Math.floor(index / 8);
-			};
-
-			var getIndex= function(x, y){
-				return y*8+x;
-			};
-
-			this.squareScopes= [];
-
-			$scope.isReverse= function(user){
-				if (user){
-					return (user === constants.user.white);
-				}
-			};
-
-			this.getControl= function(){
-				return $scope.control;
-			};
-
-			this.getMoveMode= function(){
-				return $scope.moveMode;
-			};
-
-			this.isMovable= function(squareScope){
-				if (!squareScope.isEmpty && $scope.user){
-
-					return ($scope.control === constants.control.all) || 
-						   ($scope.control === constants.control.edit) ||
-						   ($scope.control === constants.control.user && squareScope.content.piece.color == $scope.user);
-				}
-			};
-
-			this.registerSquareScope= function(squareScope){
-				var x= squareScope.content.x,
-					y= squareScope.content.y;
-					this.squareScopes[y*8+x]= squareScope;
-			};
-
-			this.needCheckMoves= function(){
-				return $scope.control !== constants.control.edit;
-			}
-
-			this.tryMove= function(prevX, prevY, x, y){
-				var sourceIndex= getIndex(prevX, prevY);
-				var piece= $scope.position[sourceIndex];
-				$scope.$apply(function(){
-					chessPositionService.checkMove(piece, x, y, $scope.accessibleMoves);
-					that.hidePreviousMoves(true);
-				});
-			};
-
-			this.addPiece= function(piece){
-				$scope.$apply(function(){
-					chessPositionService.addPiece(piece);
-				});
-			};
-
-
-			//HIDE AND DISPLAY MOVES
-			$scope.accessibleMoves;
-
-			this.displayMoves= function(moves){
-				if (moves){
-					moves.forEach(function(move,i){
-						that.squareScopes[move.y*8+move.x].content.highlight= true;
-					});
-				}
-			};
-
-			this.displayAccessibleMoves= function(piece){
-				if (!this.needCheckMoves() || !$scope.displayAccessibleSquares){
-					return;
-				}
-				$scope.accessibleMoves= chessMoveService.getMoves(piece);
-				this.displayMoves($scope.accessibleMoves);
-			};
-
-			this.hidePreviousMoves= function(removeAccessibleMoves){
-				if (!this.needCheckMoves() || !$scope.displayAccessibleSquares){
-					return;
-				}
-				if ($scope.accessibleMoves){
-					for (var i in $scope.accessibleMoves){
-						move= $scope.accessibleMoves[i];
-						this.squareScopes[move.y*8+move.x].content.highlight= false;
-					}
-					if (removeAccessibleMoves){
-						$scope.accessibleMoves= undefined;
-					}
-				}
-			};
-
-
-			var leavedBoardContent= false;
-			this.applyMoveMode= function(newVal, oldVal){
-
-				if (newVal){
-
-					switch(newVal){
-						//DRAGNDROP
-						case constants.moveMode.dragndrop:
-							//For the board itself
-							$element.on('dragenter', function(e){
-
-								var target = e.target || e.srcElement;
-								if (target === $element[0]){
-									// console.log('hide');
-									leavedBoardContent= true;
-									$scope.$apply(function(){
-										that.hidePreviousMoves(false);
-									});
-								}
-								else{
-									if (leavedBoardContent){
-										leavedBoardContent= false;
-										// console.log('display');
-										$scope.$apply(function(){
-											that.displayMoves($scope.accessibleMoves);
-										});
-									}
-								}
-							});
-
-							break;
-						//SIMPLE CLICK
-						case constants.moveMode.click:
-							$element.off('dragenter');
-							break;
-						default:
-							$log.error('Unknow move mode: ' + newVal);
-					}
-
-					//For each square
-					var squareScope;
-					for (var i in that.squareScopes){
-						squareScope= that.squareScopes[i];
-						if (squareScope.applyMoveMode){
-							squareScope.applyMoveMode(newVal);
-						}
-						else{
-							$log.error('applyMoveMode undefined on square scope');
-						}
-					}
-				}
-
-			};
-
-			//TREATMENTS CONCERNING MOVE MODE
-			$scope.$watch('moveMode', this.applyMoveMode);
-			$scope.$watch('control', function(newVal, oldVal){
-				if (newVal === constants.control.edit){
-					$scope.moveMode= constants.moveMode.dragndrop;
-				}
-			});
-
-
-		}]
-	};
-
-}]);
-angular.module('chess.directives')
-.directive('chessDraggablePieceDirective', [ function(){
-
-	return {
-		restrict:'A',
-		scope:{
-			type:'@',
-			color:'@'
-		},
-		link:function($scope, element, attrs){
-			element.on('dragstart', function(e){
-				var data='out ' + $scope.type + ' ' + $scope.color;
-				e.dataTransfer.setData('piece', data);
-			});
-		}
-	};
-}])
-.directive('chessDroppableTrash', ['chessPositionService', function(chessPositionService){
-
-	return {
-		restrict:'A',
-		scope:{},
-		link:function($scope, element, attrs){
-
-			element.on('dragover', function(e){
-			  if (e.preventDefault) {
-			    e.preventDefault(); // Necessary. Allows us to drop.
-			  }
-			});
-
-			//Update the chessboard when the piece is dropped
-			element.on('drop', function(e){
-				e.stopPropagation();
-				var data= e.dataTransfer.getData('piece');
-				if (data !== undefined){
-					var splited= data.split(' '),
-						mode= splited[0];
-					
-					//The piece comes from the board
-					if (mode === 'in'){
-						var prevX= parseInt(splited[1]),
-							prevY= parseInt(splited[2]);
-						// And the user can only move its pieces
-						$scope.$apply(function(){
-							chessPositionService.dropPosition(prevX, prevY);
-						});
-					}
-				}
-			});
-		}
-	};
-}])
-.directive('chessEditBoardDirective', ['chessPieceService','chessPositionService',
-	function(chessPieceService, chessPositionService, $animate){
-
-	return{
-		restrict:'E',
-		replace: true,
-		transclude: false,
-		scope:{},
-		template:
-		'<ul class="editBoardContainer"style="list-style-type: none;">' +
-		'	<button ng-click="clearBoard()">clear board</button>' +
-		'	<li ng-repeat="(keyType, type) in types">' +
-		'		<ul> ' +
-		'			<li ' +
-		'				class="editsquare" ' +
-		'				style="display:inline-block;" '+
-		'				ng-repeat="(keyColor, color) in colors" ' +
-		'			> ' +
-		'           	<img ' +
-		'					ng-src="{{imgSource(type, color)}}" ' +
-		'					draggable="true" ' +
-		'					chess-draggable-piece-directive ' +
-		'					type="{{keyType}}" ' +
-		'					color="{{keyColor}}" ' +
-		'				/> ' +
-		'			</li>' +
-		'		</ul> ' +
-		'	</li>' +
-		'	<li class="trash" chess-droppable-trash>' +
-		'		<img src="/imgs/trash.svg" />' +
-		'	</li>' +
-		'</div>'
-		,
-		link: function($scope, element){
-			$scope.types= chessPieceService.types;
-			$scope.type='KING';
-			$scope.colors= chessPieceService.colors;
-
-			$scope.imgSource= function(type, color){
-				return '/imgs/' + type + '_' + color + '.svg';
-			};
-
-			$scope.clearBoard= function(){
-				chessPositionService.clearPosition();
-			};
-
-		}
-	};
-
-}]);
-angular.module('chess.directives')
-.directive('chessSquareDirective', [ function(){
-
-	return {
-		require:'^chessBoardDirective',
-		replace: true,
-		transclude: false,
-		scope:{
-			x:'@',
-			y:'@',
-			piece:'@?',
-			reverse: '@'
-		},
-		template: 
-		' <div ' +
-		'	ng-class="cssClasses()" ' +
-		' >' +
-		// '	({{x}},{{y}}) ' +
-		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" draggable="{{isMovable()}}"></img>' +
-		' </div>',
-		controller:['$scope', function($scope){ 
-			this.getScope= function(){return $scope;} 
-		}],
-		link: function($scope, element, attrs, chessBoardController){
-
-			//TODO: check if $scope.content is still needed
-			var updateScopeContent= function(){
-				$scope.content= {
-					x: parseInt($scope.x),
-					y: parseInt($scope.y),
-					piece: ($scope.piece !== undefined && $scope.piece !==''? JSON.parse($scope.piece): undefined)
-				}
-
-				$scope.isEmpty= ($scope.content.piece === undefined);
-			}
-
-			//We need to set scope content at init
-			updateScopeContent();
-
-			//we need to update scope content when a modif appears on
-			//a piece
-			$scope.$watch('piece', function(newVal, oldVal){
-				updateScopeContent();
-			});
-
-			$scope.cssClasses= function(){
-				var square= true,
-					blackSquare= ( ($scope.content.x + $scope.content.y)%2 === 0 )
-					whiteSquare= !blackSquare,
-					firstOfLine= ($scope.content.x === 0),
-					reverse= ($scope.reverse === 'true'),
-					highlightSquareEmpty= $scope.content.highlight && $scope.isEmpty,
-					highlightSquareFilled= $scope.content.highlight && !$scope.isEmpty;
-
-				return {
-					square: square, 
-					blackSquare: blackSquare,
-					whiteSquare: whiteSquare, 
-					firstOfLine: firstOfLine,
-					reverse: reverse,
-					highlightSquareEmpty:highlightSquareEmpty, 
-					highlightSquareFilled: highlightSquareFilled
-				};
-			};
-
-			$scope.imgSource= function(){
-				if (!$scope.isEmpty){
-					return 'imgs/' + $scope.content.piece.name + '_' + $scope.content.piece.color + '.svg';
-				}
-			};
-
-			$scope.getImage= function(){
-				if (!$scope.isEmpty){
-					return element.find('img');
-				}
-			};
-
-
-
-			$scope.isMovable= function(){
-				return chessBoardController.isMovable($scope);
-			};
-
-			chessBoardController.registerSquareScope($scope);
-		}
-	};
-
-}]);
-angular.module('chess.directives')
-.directive('chessSquareMove', ['$log', 'chessDragDropMove', 'chessClickMove', 'chessConstants',
-	function($log, chessDragDropMove, chessClickMove,constants){
-
-	return {
-		require:['chessSquareDirective', '^chessBoardDirective'],
-		restrict:'A',
-		link:function($scope, $element, $attrs, $ctrls){
-
-			var squareCtrl= $ctrls[0],
-				boardCtrl= $ctrls[1],
-				moveMode= boardCtrl.getMoveMode();
-
-			squareCtrl.getScope().applyMoveMode= function(moveMode){
-				switch(moveMode){
-					case constants.moveMode.dragndrop:
-						chessClickMove.deactivate($element, squareCtrl, boardCtrl);
-						chessDragDropMove.activate($element, squareCtrl, boardCtrl);
-						break;
-					case constants.moveMode.click:
-						chessDragDropMove.deactivate($element, squareCtrl, boardCtrl);					
-						chessClickMove.activate($element, squareCtrl, boardCtrl);
-						break;
-					default:
-						$log.error('unknown move mode: ' + moveMode)
-						break;
-				}
-			};
-
-			squareCtrl.getScope().applyMoveMode(moveMode);
-		}
-	};
-
-}]);
-
 
 var MAJOR = '1';   // click F5 a few time to make
 var MINOR = '13';  // sure your browser cache
@@ -6439,3 +5960,525 @@ angular.module('chess.services')
 	}];
 
 });
+angular.module('chess.services')
+.provider('chessResources', function(){
+
+	var params= {
+		imgsRootPath: '/imgs'
+	};
+
+	this.setImgsRootPath= function(val){
+		var toSet= val;
+		if (toSet !== undefined){
+			if (val.substring(val.length - 1) === '/'){
+				toSet= val.substring(0, val.length-1);
+			}
+
+			params.imgsRootPath= toSet;
+		}
+	};
+
+	this.$get= [function(){
+
+		var ServiceInstance= function(){
+			this.getImgsRootPath= function(){
+				return params.imgsRootPath;
+			};
+
+
+			this.getPieceImage= function(type, color){
+				return this.getImgsRootPath() + '/' + type + '_' + color + '.svg';
+			};
+
+			this.getTrash= function(){
+				return this.getImgsRootPath() + '/trash.svg';
+			};
+		};
+
+		return new ServiceInstance();
+
+	}];
+
+
+
+
+
+});
+angular.module('chess.directives', ['chess.services']);
+angular.module('chess.directives')
+/**
+* TODO: use ngdoc
+* Directive params:
+* -> user: 'white' | 'black'
+* 	 defines the user position.
+*	 Impact draggable pieces (if control = user) and board position (choosen color is at bottom)
+* 
+* -> control: 'user' | 'all' | edit
+*    if 'user', the current user can only control its pieces
+*    if 'all', all pieces are draggable
+*    'edit' is a special mode to edit the board, no controls are done
+*/
+.directive('chessBoardDirective', ['$animate', '$log', 'chessConstants', 'chessPositionService', 'chessMoveService', 
+	function($animate, $log, constants, chessPositionService, chessMoveService){
+
+	return{
+		replace: true,
+		transclude: false,
+		scope:{
+			user:'=',
+			displayCoordinates:'=',
+			moveMode:'=',
+			displayAccessibleSquares:'=?',
+			control:'=',
+		},
+		template:
+		'<div id="chessBoardContainer">' +
+		'	<div id="chessBoard" ng-class="cssClasses()">' +
+		'		<chess-square-directive ' +
+		'			chess-square-move ' +
+		'			ng-repeat="piece in getPosition() track by $index" ' +
+		'			x="{{getX($index)}}" ' +
+		'			y="{{getY($index)}}" ' +
+		'			piece="{{piece}}" ' +
+		'			reverse="{{isReverse(user)}}" ' +
+		'		> ' +
+		'	</div> ' +
+		'	<div id="rightCoordinates" ng-if="displayCoordinates" ng-class="cssClasses()"> ' +
+		'		<div ng-repeat="indice in [] | range:8 | increment:1" ng-class="cssClasses()">{{indice}}</div> ' +
+		'	</div> ' +
+		'	<div id="bottomCoordinates"  ng-if="displayCoordinates" ng-class="cssClasses()"> ' +
+		'		<div ng-repeat="indice in [] | range:8 | asLetter | reverse" ng-class="cssClasses()">{{indice}}</div> ' +
+		'	</div> ' +
+		'</div>'
+		,
+		controller: ['$scope', '$element', function($scope, $element){
+			var that= this;
+
+			$scope.getPosition= chessPositionService.getPosition;
+			$scope.position= chessPositionService.getPosition();
+
+			//Check position changes
+			$scope.$watch(chessPositionService.isMoveAccepted, 
+				function(newVal, oldVal){
+
+					if (newVal === true){
+
+						var lastMove= chessPositionService.getLastMove();
+
+						if (lastMove){
+							var sourceIndex= getIndex(lastMove.from.x, lastMove.from.y);
+							var squareScope= that.squareScopes[sourceIndex];
+							var imgElement= squareScope.getImage();
+							var piece= $scope.position[sourceIndex];
+
+							var diffX= (lastMove.to.x - lastMove.from.x) * imgElement[0].width;
+							var diffY= (lastMove.from.y - lastMove.to.y) * imgElement[0].height;
+
+							$animate.animate(imgElement, {top:0, left: 0}, {top: diffY + 'px', left: diffX + 'px'})
+							.then(function(data){
+								$scope.$apply(
+									function(){
+										chessPositionService.movePiece(piece, lastMove.to.x, lastMove.to.y);
+									}
+								);
+							});
+						}
+					}
+
+				});
+
+			$scope.cssClasses= function(){
+				return {
+					reverse:$scope.isReverse($scope.user)
+				};
+			};
+
+			$scope.getX= function(index){
+				return index % 8;
+			};
+
+			$scope.getY= function(index){
+				return Math.floor(index / 8);
+			};
+
+			var getIndex= function(x, y){
+				return y*8+x;
+			};
+
+			this.squareScopes= [];
+
+			$scope.isReverse= function(user){
+				if (user){
+					return (user === constants.user.white);
+				}
+			};
+
+			this.getControl= function(){
+				return $scope.control;
+			};
+
+			this.getMoveMode= function(){
+				return $scope.moveMode;
+			};
+
+			this.isMovable= function(squareScope){
+				if (!squareScope.isEmpty && $scope.user){
+
+					return ($scope.control === constants.control.all) || 
+						   ($scope.control === constants.control.edit) ||
+						   ($scope.control === constants.control.user && squareScope.content.piece.color == $scope.user);
+				}
+			};
+
+			this.registerSquareScope= function(squareScope){
+				var x= squareScope.content.x,
+					y= squareScope.content.y;
+					this.squareScopes[y*8+x]= squareScope;
+			};
+
+			this.needCheckMoves= function(){
+				return $scope.control !== constants.control.edit;
+			}
+
+			this.tryMove= function(prevX, prevY, x, y){
+				var sourceIndex= getIndex(prevX, prevY);
+				var piece= $scope.position[sourceIndex];
+				$scope.$apply(function(){
+					chessPositionService.checkMove(piece, x, y, $scope.accessibleMoves);
+					that.hidePreviousMoves(true);
+				});
+			};
+
+			this.addPiece= function(piece){
+				$scope.$apply(function(){
+					chessPositionService.addPiece(piece);
+				});
+			};
+
+
+			//HIDE AND DISPLAY MOVES
+			$scope.accessibleMoves;
+
+			this.displayMoves= function(moves){
+				if (moves){
+					moves.forEach(function(move,i){
+						that.squareScopes[move.y*8+move.x].content.highlight= true;
+					});
+				}
+			};
+
+			this.displayAccessibleMoves= function(piece){
+				if (!this.needCheckMoves() || !$scope.displayAccessibleSquares){
+					return;
+				}
+				$scope.accessibleMoves= chessMoveService.getMoves(piece);
+				this.displayMoves($scope.accessibleMoves);
+			};
+
+			this.hidePreviousMoves= function(removeAccessibleMoves){
+				if (!this.needCheckMoves() || !$scope.displayAccessibleSquares){
+					return;
+				}
+				if ($scope.accessibleMoves){
+					for (var i in $scope.accessibleMoves){
+						move= $scope.accessibleMoves[i];
+						this.squareScopes[move.y*8+move.x].content.highlight= false;
+					}
+					if (removeAccessibleMoves){
+						$scope.accessibleMoves= undefined;
+					}
+				}
+			};
+
+
+			var leavedBoardContent= false;
+			this.applyMoveMode= function(newVal, oldVal){
+
+				if (newVal){
+
+					switch(newVal){
+						//DRAGNDROP
+						case constants.moveMode.dragndrop:
+							//For the board itself
+							$element.on('dragenter', function(e){
+
+								var target = e.target || e.srcElement;
+								if (target === $element[0]){
+									// console.log('hide');
+									leavedBoardContent= true;
+									$scope.$apply(function(){
+										that.hidePreviousMoves(false);
+									});
+								}
+								else{
+									if (leavedBoardContent){
+										leavedBoardContent= false;
+										// console.log('display');
+										$scope.$apply(function(){
+											that.displayMoves($scope.accessibleMoves);
+										});
+									}
+								}
+							});
+
+							break;
+						//SIMPLE CLICK
+						case constants.moveMode.click:
+							$element.off('dragenter');
+							break;
+						default:
+							$log.error('Unknow move mode: ' + newVal);
+					}
+
+					//For each square
+					var squareScope;
+					for (var i in that.squareScopes){
+						squareScope= that.squareScopes[i];
+						if (squareScope.applyMoveMode){
+							squareScope.applyMoveMode(newVal);
+						}
+						else{
+							$log.error('applyMoveMode undefined on square scope');
+						}
+					}
+				}
+
+			};
+
+			//TREATMENTS CONCERNING MOVE MODE
+			$scope.$watch('moveMode', this.applyMoveMode);
+			$scope.$watch('control', function(newVal, oldVal){
+				if (newVal === constants.control.edit){
+					$scope.moveMode= constants.moveMode.dragndrop;
+				}
+			});
+
+
+		}]
+	};
+
+}]);
+angular.module('chess.directives')
+.directive('chessDraggablePieceDirective', [ function(){
+
+	return {
+		restrict:'A',
+		scope:{
+			type:'@',
+			color:'@'
+		},
+		link:function($scope, element, attrs){
+			element.on('dragstart', function(e){
+				var data='out ' + $scope.type + ' ' + $scope.color;
+				e.dataTransfer.setData('piece', data);
+			});
+		}
+	};
+}])
+.directive('chessDroppableTrash', ['chessPositionService', function(chessPositionService){
+
+	return {
+		restrict:'A',
+		scope:{},
+		link:function($scope, element, attrs){
+
+			element.on('dragover', function(e){
+			  if (e.preventDefault) {
+			    e.preventDefault(); // Necessary. Allows us to drop.
+			  }
+			});
+
+			//Update the chessboard when the piece is dropped
+			element.on('drop', function(e){
+				e.stopPropagation();
+				var data= e.dataTransfer.getData('piece');
+				if (data !== undefined){
+					var splited= data.split(' '),
+						mode= splited[0];
+					
+					//The piece comes from the board
+					if (mode === 'in'){
+						var prevX= parseInt(splited[1]),
+							prevY= parseInt(splited[2]);
+						// And the user can only move its pieces
+						$scope.$apply(function(){
+							chessPositionService.dropPosition(prevX, prevY);
+						});
+					}
+				}
+			});
+		}
+	};
+}])
+.directive('chessEditBoardDirective', ['chessPieceService','chessPositionService', 'chessResources',
+	function(chessPieceService, chessPositionService, chessResources){
+
+	return{
+		restrict:'E',
+		replace: true,
+		transclude: false,
+		scope:{},
+		template:
+		'<ul class="editBoardContainer"style="list-style-type: none;">' +
+		'	<button ng-click="clearBoard()">clear board</button>' +
+		'	<li ng-repeat="(keyType, type) in types">' +
+		'		<ul> ' +
+		'			<li ' +
+		'				class="editsquare" ' +
+		'				style="display:inline-block;" '+
+		'				ng-repeat="(keyColor, color) in colors" ' +
+		'			> ' +
+		'           	<img ' +
+		'					ng-src="{{imgSource(type, color)}}" ' +
+		'					draggable="true" ' +
+		'					chess-draggable-piece-directive ' +
+		'					type="{{keyType}}" ' +
+		'					color="{{keyColor}}" ' +
+		'				/> ' +
+		'			</li>' +
+		'		</ul> ' +
+		'	</li>' +
+		'	<li class="trash" chess-droppable-trash>' +
+		'		<img src="/imgs/trash.svg" />' +
+		'	</li>' +
+		'</div>'
+		,
+		link: function($scope, element){
+			$scope.types= chessPieceService.types;
+			$scope.type='KING';
+			$scope.colors= chessPieceService.colors;
+
+			$scope.imgSource= function(type, color){
+				return chessResources.getPieceImage(type, color);
+			};
+
+			$scope.clearBoard= function(){
+				chessPositionService.clearPosition();
+			};
+
+		}
+	};
+
+}]);
+angular.module('chess.directives')
+.directive('chessSquareDirective', ['chessResources', function(chessResources){
+
+	return {
+		require:'^chessBoardDirective',
+		replace: true,
+		transclude: false,
+		scope:{
+			x:'@',
+			y:'@',
+			piece:'@?',
+			reverse: '@'
+		},
+		template: 
+		' <div ' +
+		'	ng-class="cssClasses()" ' +
+		' >' +
+		// '	({{x}},{{y}}) ' +
+		' 	<img ng-if="!isEmpty" ng-src="{{imgSource()}}" draggable="{{isMovable()}}"></img>' +
+		' </div>',
+		controller:['$scope', function($scope){ 
+			this.getScope= function(){return $scope;} 
+		}],
+		link: function($scope, element, attrs, chessBoardController){
+
+			//TODO: check if $scope.content is still needed
+			var updateScopeContent= function(){
+				$scope.content= {
+					x: parseInt($scope.x),
+					y: parseInt($scope.y),
+					piece: ($scope.piece !== undefined && $scope.piece !==''? JSON.parse($scope.piece): undefined)
+				}
+
+				$scope.isEmpty= ($scope.content.piece === undefined);
+			}
+
+			//We need to set scope content at init
+			updateScopeContent();
+
+			//we need to update scope content when a modif appears on
+			//a piece
+			$scope.$watch('piece', function(newVal, oldVal){
+				updateScopeContent();
+			});
+
+			$scope.cssClasses= function(){
+				var square= true,
+					blackSquare= ( ($scope.content.x + $scope.content.y)%2 === 0 )
+					whiteSquare= !blackSquare,
+					firstOfLine= ($scope.content.x === 0),
+					reverse= ($scope.reverse === 'true'),
+					highlightSquareEmpty= $scope.content.highlight && $scope.isEmpty,
+					highlightSquareFilled= $scope.content.highlight && !$scope.isEmpty;
+
+				return {
+					square: square, 
+					blackSquare: blackSquare,
+					whiteSquare: whiteSquare, 
+					firstOfLine: firstOfLine,
+					reverse: reverse,
+					highlightSquareEmpty:highlightSquareEmpty, 
+					highlightSquareFilled: highlightSquareFilled
+				};
+			};
+
+			$scope.imgSource= function(){
+				if (!$scope.isEmpty){
+					return chessResources.getPieceImage($scope.content.piece.name, $scope.content.piece.color);
+				}
+			};
+
+			$scope.getImage= function(){
+				if (!$scope.isEmpty){
+					return element.find('img');
+				}
+			};
+
+
+
+			$scope.isMovable= function(){
+				return chessBoardController.isMovable($scope);
+			};
+
+			chessBoardController.registerSquareScope($scope);
+		}
+	};
+
+}]);
+angular.module('chess.directives')
+.directive('chessSquareMove', ['$log', 'chessDragDropMove', 'chessClickMove', 'chessConstants',
+	function($log, chessDragDropMove, chessClickMove,constants){
+
+	return {
+		require:['chessSquareDirective', '^chessBoardDirective'],
+		restrict:'A',
+		link:function($scope, $element, $attrs, $ctrls){
+
+			var squareCtrl= $ctrls[0],
+				boardCtrl= $ctrls[1],
+				moveMode= boardCtrl.getMoveMode();
+
+			squareCtrl.getScope().applyMoveMode= function(moveMode){
+				switch(moveMode){
+					case constants.moveMode.dragndrop:
+						chessClickMove.deactivate($element, squareCtrl, boardCtrl);
+						chessDragDropMove.activate($element, squareCtrl, boardCtrl);
+						break;
+					case constants.moveMode.click:
+						chessDragDropMove.deactivate($element, squareCtrl, boardCtrl);					
+						chessClickMove.activate($element, squareCtrl, boardCtrl);
+						break;
+					default:
+						$log.error('unknown move mode: ' + moveMode)
+						break;
+				}
+			};
+
+			squareCtrl.getScope().applyMoveMode(moveMode);
+		}
+	};
+
+}]);

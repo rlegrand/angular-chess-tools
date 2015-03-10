@@ -1,5 +1,9 @@
 angular.module('sample', ['chess'])
-.config(function(){})
+.config(['chessResourcesProvider', function(resourcesProvider){
+
+	resourcesProvider.setImgsRootPath('/imgs');
+
+}])
 .controller('mainController', ['$scope','chessPositionService','chessPieceService',
 	function($scope, chessPositionService, chessPieceService){
 

@@ -1,5 +1,5 @@
 angular.module('chess.directives')
-.directive('chessSquareDirective', [ function(){
+.directive('chessSquareDirective', ['chessResources', function(chessResources){
 
 	return {
 		require:'^chessBoardDirective',
@@ -65,7 +65,7 @@ angular.module('chess.directives')
 
 			$scope.imgSource= function(){
 				if (!$scope.isEmpty){
-					return 'imgs/' + $scope.content.piece.name + '_' + $scope.content.piece.color + '.svg';
+					return chessResources.getPieceImage($scope.content.piece.name, $scope.content.piece.color);
 				}
 			};
 

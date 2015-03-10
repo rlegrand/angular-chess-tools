@@ -50,8 +50,8 @@ angular.module('chess.directives')
 		}
 	};
 }])
-.directive('chessEditBoardDirective', ['chessPieceService','chessPositionService',
-	function(chessPieceService, chessPositionService, $animate){
+.directive('chessEditBoardDirective', ['chessPieceService','chessPositionService', 'chessResources',
+	function(chessPieceService, chessPositionService, chessResources){
 
 	return{
 		restrict:'E',
@@ -89,7 +89,7 @@ angular.module('chess.directives')
 			$scope.colors= chessPieceService.colors;
 
 			$scope.imgSource= function(type, color){
-				return '/imgs/' + type + '_' + color + '.svg';
+				return chessResources.getPieceImage(type, color);
 			};
 
 			$scope.clearBoard= function(){

@@ -12,6 +12,7 @@ var gulp= require('gulp'),
   addSrc= require('gulp-add-src'),
   gfilter= require('gulp-filter'),
   rename= require('gulp-rename'),
+  greplace= require('gulp-replace'),
   gdocs= require('gulp-ngdocs'),
   usemin= require('gulp-usemin'),
   webdriver_standalone = require('gulp-protractor').webdriver_standalone,
@@ -168,14 +169,18 @@ gulp.task('default', ['build', 'sample'], function(cb){
 gulp.task('imgssample', [ 'clean'],  function(){
   gulp.src(appImages)
   .pipe(gulp.dest('./' + target + '/sample/imgs'));
-});  
+}); 
 
 gulp.task('sample', ['clean', 'imgssample'], function(){
   return gulp.src('src/e2eTemplates/index.html')
       .pipe(usemin({
         css: [cssmin(), 'concat'],
         extjs: [uglify(), 'concat'],
-        appjs: [uglify(), 'concat']
+        appjs: [
+          greplace(/setImgsRootPath\('\/imgs'\)/, 'setImgsRootPath(\'/angular-chess-tools\')'),
+          uglify(), 
+          'concat'
+        ]
       }))
       .pipe(gulp.dest('./' + target + '/sample'));
 });
