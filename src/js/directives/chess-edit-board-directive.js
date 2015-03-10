@@ -79,7 +79,7 @@ angular.module('chess.directives')
 		'		</ul> ' +
 		'	</li>' +
 		'	<li class="trash" chess-droppable-trash>' +
-		'		<img src="/imgs/trash.svg" />' +
+		'		<img src="{{imgTrash()}}" />' +
 		'	</li>' +
 		'</div>'
 		,
@@ -91,6 +91,10 @@ angular.module('chess.directives')
 			$scope.imgSource= function(type, color){
 				return chessResources.getPieceImage(type, color);
 			};
+
+			$scope.imgTrash= function(){
+				return chessResources.getTrash();
+			}
 
 			$scope.clearBoard= function(){
 				chessPositionService.clearPosition();
