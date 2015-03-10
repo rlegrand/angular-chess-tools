@@ -21,6 +21,12 @@ angular.module('chess.directives')
 						chessDragDropMove.deactivate($element, squareCtrl, boardCtrl);					
 						chessClickMove.activate($element, squareCtrl, boardCtrl);
 						break;
+					case constants.moveMode.all:
+						chessClickMove.deactivate($element, squareCtrl, boardCtrl);
+						chessClickMove.activate($element, squareCtrl, boardCtrl);
+						chessDragDropMove.deactivate($element, squareCtrl, boardCtrl);
+						chessDragDropMove.activate($element, squareCtrl, boardCtrl);
+						break;
 					default:
 						$log.error('unknown move mode: ' + moveMode)
 						break;

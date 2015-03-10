@@ -22,12 +22,10 @@ angular.module('sample', ['chess'])
 	}
 
 	$scope.moveMode=  'dragndrop';
+	var moveModes= ['dragndrop', 'click', 'all'],
+		moveindice= 0;
 	$scope.switchMoveMode= function(){
-		if ($scope.moveMode === 'dragndrop'){
-			$scope.moveMode= 'click';
-		}else{
-			$scope.moveMode= 'dragndrop';
-		}
+		$scope.moveMode= moveModes[++moveindice % 3];
 	}
 
 	$scope.checkMove= function(){

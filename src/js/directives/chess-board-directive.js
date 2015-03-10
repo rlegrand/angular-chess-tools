@@ -184,40 +184,54 @@ angular.module('chess.directives')
 			};
 
 
+			this.applyDragndropMode= function(){
+				//For the board itself
+				$element.on('dragenter', function(e){
+
+					var target = e.target || e.srcElement;
+					if (target === $element[0]){
+						// console.log('hide');
+						leavedBoardContent= true;
+						$scope.$apply(function(){
+							that.hidePreviousMoves(false);
+						});
+					}
+					else{
+						if (leavedBoardContent){
+							leavedBoardContent= false;
+							// console.log('display');
+							$scope.$apply(function(){
+								that.displayMoves($scope.accessibleMoves);
+							});
+						}
+					}
+				});				
+			};
+
+			this.disableDragndropMode= function(){
+				$element.off('dragenter');
+			};
+
+			this.applyClickMode= function(){
+
+			}
+
+
 			var leavedBoardContent= false;
 			this.applyMoveMode= function(newVal, oldVal){
-
 				if (newVal){
 
 					switch(newVal){
 						//DRAGNDROP
 						case constants.moveMode.dragndrop:
-							//For the board itself
-							$element.on('dragenter', function(e){
-
-								var target = e.target || e.srcElement;
-								if (target === $element[0]){
-									// console.log('hide');
-									leavedBoardContent= true;
-									$scope.$apply(function(){
-										that.hidePreviousMoves(false);
-									});
-								}
-								else{
-									if (leavedBoardContent){
-										leavedBoardContent= false;
-										// console.log('display');
-										$scope.$apply(function(){
-											that.displayMoves($scope.accessibleMoves);
-										});
-									}
-								}
-							});
-
+							that.applyDragndropMode();
 							break;
 						//SIMPLE CLICK
 						case constants.moveMode.click:
-							$element.off('dragenter');
+							that.disableDragndropMode();
+							break;
+						case constants.moveMode.all:
+							that.applyDragndropMode();
 							break;
 						default:
 							$log.error('Unknow move mode: ' + newVal);
@@ -235,7 +249,6 @@ angular.module('chess.directives')
 						}
 					}
 				}
-
 			};
 
 			//TREATMENTS CONCERNING MOVE MODE

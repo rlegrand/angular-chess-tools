@@ -5,6 +5,7 @@ angular.module('chess', [
 ])
 .config([function(){}]);
 
+angular.module('chess.controllers', []);
 angular.module('chess.directives', ['chess.services']);
 angular.module('chess.directives')
 /**
@@ -192,40 +193,54 @@ angular.module('chess.directives')
 			};
 
 
+			this.applyDragndropMode= function(){
+				//For the board itself
+				$element.on('dragenter', function(e){
+
+					var target = e.target || e.srcElement;
+					if (target === $element[0]){
+						// console.log('hide');
+						leavedBoardContent= true;
+						$scope.$apply(function(){
+							that.hidePreviousMoves(false);
+						});
+					}
+					else{
+						if (leavedBoardContent){
+							leavedBoardContent= false;
+							// console.log('display');
+							$scope.$apply(function(){
+								that.displayMoves($scope.accessibleMoves);
+							});
+						}
+					}
+				});				
+			};
+
+			this.disableDragndropMode= function(){
+				$element.off('dragenter');
+			};
+
+			this.applyClickMode= function(){
+
+			}
+
+
 			var leavedBoardContent= false;
 			this.applyMoveMode= function(newVal, oldVal){
-
 				if (newVal){
 
 					switch(newVal){
 						//DRAGNDROP
 						case constants.moveMode.dragndrop:
-							//For the board itself
-							$element.on('dragenter', function(e){
-
-								var target = e.target || e.srcElement;
-								if (target === $element[0]){
-									// console.log('hide');
-									leavedBoardContent= true;
-									$scope.$apply(function(){
-										that.hidePreviousMoves(false);
-									});
-								}
-								else{
-									if (leavedBoardContent){
-										leavedBoardContent= false;
-										// console.log('display');
-										$scope.$apply(function(){
-											that.displayMoves($scope.accessibleMoves);
-										});
-									}
-								}
-							});
-
+							that.applyDragndropMode();
 							break;
 						//SIMPLE CLICK
 						case constants.moveMode.click:
-							$element.off('dragenter');
+							that.disableDragndropMode();
+							break;
+						case constants.moveMode.all:
+							that.applyDragndropMode();
 							break;
 						default:
 							$log.error('Unknow move mode: ' + newVal);
@@ -243,7 +258,6 @@ angular.module('chess.directives')
 						}
 					}
 				}
-
 			};
 
 			//TREATMENTS CONCERNING MOVE MODE
@@ -340,7 +354,7 @@ angular.module('chess.directives')
 		'		</ul> ' +
 		'	</li>' +
 		'	<li class="trash" chess-droppable-trash>' +
-		'		<img src="{{imgTrash()}}" />' +
+		'		<img ng-src="{{imgTrash()}}" />' +
 		'	</li>' +
 		'</div>'
 		,
@@ -476,6 +490,12 @@ angular.module('chess.directives')
 						chessDragDropMove.deactivate($element, squareCtrl, boardCtrl);					
 						chessClickMove.activate($element, squareCtrl, boardCtrl);
 						break;
+					case constants.moveMode.all:
+						chessClickMove.deactivate($element, squareCtrl, boardCtrl);
+						chessClickMove.activate($element, squareCtrl, boardCtrl);
+						chessDragDropMove.deactivate($element, squareCtrl, boardCtrl);
+						chessDragDropMove.activate($element, squareCtrl, boardCtrl);
+						break;
 					default:
 						$log.error('unknown move mode: ' + moveMode)
 						break;
@@ -487,63 +507,6 @@ angular.module('chess.directives')
 	};
 
 }]);
-
-angular.module('chess.controllers', []);
-angular.module('chess.filters',[]);
-angular.module('chess.filters')
-.filter('range', function(){
-	return function(input, range, reverse){
-
-		var res= [];
-
-		for (var i= 0; i< range; i++){
-			var toAdd= (!reverse? i: range - 1 - i);
-			res.push(toAdd);
-		}
-
-		return res;
-	};
-})
-.filter('reverse', function(){
-	return function(input, incrementBy){
-
-		var res=[];
-
-		for(var i= 0; i< input.length; i++){
-			res.push(input[input.length - i - 1]);
-		}
-
-		return res;
-	};
-})
-.filter('increment', function(){
-	return function(input, incrementBy){
-
-		var res=[];
-
-		for(var i= 0; i< input.length; i++){
-			res.push(input[i] + incrementBy);
-		}
-
-		return res;
-	};
-})
-.filter('asLetter', function(){
-	return function(input){
-
-		var res= [];
-
-		var val;
-		for (var i= 0; i< input.length; i++){
-			val= input[i] + 3;
-    		res.push(String.fromCharCode(94 + val));
-		}
-
-		return res;
-	};
-});
-
-
 
 
 var MAJOR = '1';   // click F5 a few time to make
@@ -5514,6 +5477,62 @@ var lozza         = new lozChess()
 lozza.board.lozza = lozza;
 
 
+angular.module('chess.filters',[]);
+angular.module('chess.filters')
+.filter('range', function(){
+	return function(input, range, reverse){
+
+		var res= [];
+
+		for (var i= 0; i< range; i++){
+			var toAdd= (!reverse? i: range - 1 - i);
+			res.push(toAdd);
+		}
+
+		return res;
+	};
+})
+.filter('reverse', function(){
+	return function(input, incrementBy){
+
+		var res=[];
+
+		for(var i= 0; i< input.length; i++){
+			res.push(input[input.length - i - 1]);
+		}
+
+		return res;
+	};
+})
+.filter('increment', function(){
+	return function(input, incrementBy){
+
+		var res=[];
+
+		for(var i= 0; i< input.length; i++){
+			res.push(input[i] + incrementBy);
+		}
+
+		return res;
+	};
+})
+.filter('asLetter', function(){
+	return function(input){
+
+		var res= [];
+
+		var val;
+		for (var i= 0; i< input.length; i++){
+			val= input[i] + 3;
+    		res.push(String.fromCharCode(94 + val));
+		}
+
+		return res;
+	};
+});
+
+
+
 angular.module('chess.services', []);
 angular.module('chess.services')
 .factory('clickTracker', function(){
@@ -5586,7 +5605,8 @@ angular.module('chess.services')
 .constant('chessConstants', {
 	moveMode:{
 		dragndrop:'dragndrop',
-		click:'click'
+		click:'click',
+		all:'all'
 	},
 	control:{
 		all:'all',

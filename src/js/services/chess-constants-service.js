@@ -2,7 +2,8 @@ angular.module('chess.services')
 .constant('chessConstants', {
 	moveMode:{
 		dragndrop:'dragndrop',
-		click:'click'
+		click:'click',
+		all:'all'
 	},
 	control:{
 		all:'all',

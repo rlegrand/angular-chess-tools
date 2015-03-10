@@ -79,7 +79,7 @@ angular.module('chess.directives')
 		'		</ul> ' +
 		'	</li>' +
 		'	<li class="trash" chess-droppable-trash>' +
-		'		<img src="{{imgTrash()}}" />' +
+		'		<img ng-src="{{imgTrash()}}" />' +
 		'	</li>' +
 		'</div>'
 		,
